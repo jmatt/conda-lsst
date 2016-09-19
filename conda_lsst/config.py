@@ -311,7 +311,7 @@ def _get_our_channels(regex):
 	from urlparse import urljoin
 	import conda.config
 
-	chans = [ urljoin(conda.config.channel_alias, u).rstrip('/ ') + '/' for u in conda.config.get_rc_urls() ]
+	chans = [ urljoin(conda.config.context.channel_alias, u).rstrip('/ ') + '/' for u in conda.config.get_rc_urls() ]
 	chans = [ chan for chan in chans if re.match(regex, chan) ]
 	return chans
 
