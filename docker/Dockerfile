@@ -1,34 +1,32 @@
-FROM    centos:centos5
+FROM continuumio/centos5_gcc5_base:5.11-5.2-1
+MAINTAINER J. Matt Peterson <jmatt@lsst.org>
 
-# Following instructions on:
-# https://www.digitalocean.com/community/tutorials/docker-explained-using-dockerfiles-to-automate-building-of-images
+WORKDIR /build
+COPY build/yum_install_syslibs.sh \
+     build/yum_install_cmake28.sh \
+     build/source_install_git.sh \
+     build/install_jmatt_lsstsw.sh \
+     build/install_jmatt_conda-lsst.sh \
+     build/yum_install_tools.sh \
+     build/git-2.2.2.tar.gz \
+     /build/
 
-# Get toolchain prerequisites
-RUN	yum install -y \
-		curl git \
-		make glibc-headers glibc-devel patch bzip2 libgfortran bzip2-devel \
-		flex bison which ncurses-devel zlib-devel which \
-		libXext libSM libXrender \
-		readline-devel
+RUN yum install -y epel-release bash
 
-# fftw's eupspkg.cfg.sh gratuitously requires rsync
-RUN	yum install -y rsync
+RUN bash yum_install_syslibs.sh && \
+    bash yum_install_cmake28.sh
 
-# Install joe for mjuric
-RUN	rpm -ivh http://dl.fedoraproject.org/pub/epel/epel-release-latest-5.noarch.rpm && \
-	yum install -y joe
+RUN bash source_install_git.sh
 
-# Create user corresponding to our local user
-ARG	GROUP_ID
-ARG	GROUP_NAME
-ARG	USER_ID
-ARG	USER_NAME
-ARG	HOME
+RUN bash install_jmatt_lsstsw.sh && \
+    bash install_jmatt_conda-lsst.sh
 
-RUN	groupadd -g $GROUP_ID $GROUP_NAME
-RUN	useradd -d $HOME -g $GROUP_NAME -u $USER_ID $USER_NAME
+RUN bash yum_install_tools.sh && \
+    rm -rf /build/ && \
+    useradd -m --uid 1000 -G wheel dev && \
+    echo '%wheel ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers && \
+    echo 'Defaults:%wheel !requiretty' >> /etc/sudoers && \
+    chown -R dev:dev /opt
 
-ENV	PATH=$HOME/conda-lsst/miniconda/bin:$PATH
-
-USER	$USER_ID
-WORKDIR	$HOME
+WORKDIR /home/dev
+USER dev
