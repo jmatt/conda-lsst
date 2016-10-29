@@ -1,0 +1,38 @@
+#
+# Run `conda build .` to build this package
+#
+
+package:
+  name: "lsst-log4cxx"
+  version: "0.10.0.6.post1"
+
+source:
+  git_rev: "e820ae31346b4b1cf8c592e94d1ee6498213aa9b"
+  git_url: "https://github.com/LSST/log4cxx"
+
+
+build:
+  number: 4
+  string: "4"
+#  binary_relocation: false
+
+requirements:
+  build:
+    - eups >=2.0.2
+    - lsst-apr ==1.5.2
+    - lsst-apr-util ==1.5.4
+    - expat
+    - nomkl                         #
+
+  run:
+    - eups >=2.0.2
+    - libgcc >=4.8.5                # [not osx]
+    - lsst-apr ==1.5.2
+    - lsst-apr-util ==1.5.4
+    - expat
+    - nomkl                         #
+
+about:
+  home: "https://github.com/LSST/log4cxx"
+#  license: GPLv2
+#  summary: A version manager tracking product dependencies
