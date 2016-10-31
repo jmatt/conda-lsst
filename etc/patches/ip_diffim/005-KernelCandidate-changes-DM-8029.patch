@@ -1,0 +1,252 @@
+diff --git examples/crossCorrelation.py examples/crossCorrelation.py
+index e557b36..b112ff9 100644
+--- examples/crossCorrelation.py
++++ examples/crossCorrelation.py
+@@ -36,7 +36,7 @@ def makeAutoCorrelation(kernelCellSet, spatialKernel, makePlot=False):
+     d2 = []
+ 
+     for i in range(len(candList)):
+-        cand1 = ipDiffim.cast_KernelCandidateF(kernelCellSet.getCandidateById(candList[i]))
++        cand1 = ipDiffim.KernelCandidateF.cast(kernelCellSet.getCandidateById(candList[i]))
+         x1 = cand1.getXCenter()
+         y1 = cand1.getYCenter()
+ 
+@@ -55,7 +55,7 @@ def makeAutoCorrelation(kernelCellSet, spatialKernel, makePlot=False):
+         kVector1 = kImage1.getArray().ravel()
+ 
+         for j in range(i+1, len(candList)):
+-            cand2 = ipDiffim.cast_KernelCandidateF(kernelCellSet.getCandidateById(candList[j]))
++            cand2 = ipDiffim.KernelCandidateF.cast(kernelCellSet.getCandidateById(candList[j]))
+             x2 = cand2.getXCenter()
+             y2 = cand2.getYCenter()
+ 
+diff --git examples/debugSpatialModel.py examples/debugSpatialModel.py
+index 7cd4f16..b642d8d 100644
+--- examples/debugSpatialModel.py
++++ examples/debugSpatialModel.py
+@@ -113,7 +113,7 @@
+     # Inputs
+     for cell in kernelCellSet.getCellList():
+         for cand in cell.begin(False): # False = include bad candidates
+-            cand = ipDiffim.cast_KernelCandidateF(cand)
++            cand = ipDiffim.KernelCandidateF.cast(cand)
+             rchi2 = cand.getChi2()
+ 
+             # No kernels made
+diff --git examples/jackknifeResampleSpatialKernel.py examples/jackknifeResampleSpatialKernel.py
+index b307eb5..e6011b4 100644
+--- examples/jackknifeResampleSpatialKernel.py
++++ examples/jackknifeResampleSpatialKernel.py
+@@ -157,7 +157,7 @@ def setStatus(self, cellSet, cid, value):
+         # cellSet.getCandidateById(id).setStatus(value)
+         for cell in cellSet.getCellList():
+             for cand in cell.begin(False):
+-                cand = ipDiffim.cast_KernelCandidateF(cand)
++                cand = ipDiffim.KernelCandidateF.cast(cand)
+                 if (cand.getId() == cid):
+                     cand.setStatus(value)
+                     return cand
+@@ -172,7 +172,7 @@ def jackknifeResample(self, psfmatch, results):
+         for cell in cellSet.getCellList():
+             print()
+             for cand in cell.begin(False):
+-                cand = ipDiffim.cast_KernelCandidateF(cand)
++                cand = ipDiffim.KernelCandidateF.cast(cand)
+ 
+                 if cand.getStatus() == afwMath.SpatialCellCandidate.GOOD:
+                     goodList.append(cand.getId())
+diff --git python/lsst/ip/diffim/diffimLib.i python/lsst/ip/diffim/diffimLib.i
+index 7f320b4..ec02e2e 100644
+--- python/lsst/ip/diffim/diffimLib.i
++++ python/lsst/ip/diffim/diffimLib.i
+@@ -217,12 +217,6 @@ lsst::afw::image::Image<PIXTYPE>
+ %define %KernelCandidate(NAME, TYPE)
+ %template(KernelCandidate##NAME) lsst::ip::diffim::KernelCandidate<TYPE>;
+ %template(makeKernelCandidate) lsst::ip::diffim::makeKernelCandidate<TYPE>;
+-%inline %{
+-    lsst::ip::diffim::KernelCandidate<TYPE>::Ptr
+-        cast_KernelCandidate##NAME(lsst::afw::math::SpatialCellCandidate::Ptr candidate) {
+-        return std::dynamic_pointer_cast<lsst::ip::diffim::KernelCandidate<TYPE> >(candidate);
+-    }
+-%}
+ %castShared(lsst::ip::diffim::KernelCandidate<TYPE>, lsst::afw::math::SpatialCellImageCandidate);
+ %castShared(lsst::ip::diffim::KernelCandidate<TYPE>, lsst::afw::math::SpatialCellCandidate);
+ %enddef
+diff --git python/lsst/ip/diffim/diffimTools.py python/lsst/ip/diffim/diffimTools.py
+index 30f5745..e401061 100644
+--- python/lsst/ip/diffim/diffimTools.py
++++ python/lsst/ip/diffim/diffimTools.py
+@@ -260,7 +260,7 @@ def writeKernelCellSet(kernelCellSet, psfMatchingKernel, backgroundModel, outdir
+ 
+     for cell in kernelCellSet.getCellList():
+         for cand in cell.begin(False): # False = include bad candidates
+-            cand = diffimLib.cast_KernelCandidateF(cand)
++            cand = diffimLib.KernelCandidateF.cast(cand)
+             if cand.getStatus() == afwMath.SpatialCellCandidate.GOOD:
+                 xCand = int(cand.getXCenter())
+                 yCand = int(cand.getYCenter())
+@@ -421,7 +421,7 @@ def __call__(self, kernelCellSet, log):
+ 
+                     for cell in kernelCellSet.getCellList():
+                         for cand in cell.begin(False): # False = include bad candidates
+-                            cand = diffimLib.cast_KernelCandidateF(cand)
++                            cand = diffimLib.KernelCandidateF.cast(cand)
+                             if cand.getStatus() != afwMath.SpatialCellCandidate.GOOD:
+                                 continue
+                             diffIm = cand.getDifferenceImage(diffimLib.KernelCandidateF.RECENT)
+diff --git python/lsst/ip/diffim/makeRatingVector.py python/lsst/ip/diffim/makeRatingVector.py
+index bfd6c95..30beda4 100644
+--- python/lsst/ip/diffim/makeRatingVector.py
++++ python/lsst/ip/diffim/makeRatingVector.py
+@@ -32,7 +32,7 @@ def makeRatingVector(kernelCellSet, spatialKernel, spatialBg):
+     nBad = 0
+     for cell in kernelCellSet.getCellList():
+         for cand in cell.begin(False): # False = include bad candidates
+-            cand = diffimLib.cast_KernelCandidateF(cand)
++            cand = diffimLib.KernelCandidateF.cast(cand)
+             if cand.getStatus() == afwMath.SpatialCellCandidate.GOOD:
+                 # this has been used for processing
+                 nGood += 1
+diff --git python/lsst/ip/diffim/psfMatch.py python/lsst/ip/diffim/psfMatch.py
+index 10793b1..db4a079 100644
+--- python/lsst/ip/diffim/psfMatch.py
++++ python/lsst/ip/diffim/psfMatch.py
+@@ -743,7 +743,7 @@ def _diagnostic(self, kernelCellSet, spatialSolution, spatialKernel, spatialBg):
+         nTot = 0
+         for cell in kernelCellSet.getCellList():
+             for cand in cell.begin(False): # False = include bad candidates
+-                cand = diffimLib.cast_KernelCandidateF(cand)
++                cand = diffimLib.KernelCandidateF.cast(cand)
+                 nTot += 1
+                 if cand.getStatus() == afwMath.SpatialCellCandidate.GOOD:
+                     nGood += 1
+diff --git python/lsst/ip/diffim/utils.py python/lsst/ip/diffim/utils.py
+index 3707deb..fad35d6 100644
+--- python/lsst/ip/diffim/utils.py
++++ python/lsst/ip/diffim/utils.py
+@@ -80,7 +80,7 @@ def showKernelSpatialCells(maskedIm, kernelCellSet, showChi2=False, symb="o",
+ 
+             goodies = ctypeBad is None
+             for cand in cell.begin(goodies):
+-                cand = diffimLib.cast_KernelCandidateF(cand)
++                cand = diffimLib.KernelCandidateF.cast(cand)
+                 xc, yc = cand.getXCenter() + origin[0], cand.getYCenter() + origin[1]
+                 if cand.getStatus() == afwMath.SpatialCellCandidate.BAD:
+                     color = ctypeBad
+@@ -158,7 +158,7 @@ def showKernelCandidates(kernelCellSet, kernel, background, frame=None, showBadC
+     candidateIndex = 0
+     for cell in kernelCellSet.getCellList():
+         for cand in cell.begin(False): # include bad candidates
+-            cand = diffimLib.cast_KernelCandidateF(cand)
++            cand = diffimLib.KernelCandidateF.cast(cand)
+ 
+             # Original difference image; if does not exist, skip candidate
+             try:
+@@ -293,7 +293,7 @@ def plotKernelSpatialModel(kernel, kernelCellSet, showBadCandidates=True,
+     badAmps = list()
+     for cell in kernelCellSet.getCellList():
+         for cand in cell.begin(False):
+-            cand = diffimLib.cast_KernelCandidateF(cand)
++            cand = diffimLib.KernelCandidateF.cast(cand)
+             if not showBadCandidates and cand.isBad():
+                 continue
+             candCenter = afwGeom.PointD(cand.getXCenter(), cand.getYCenter())
+@@ -505,7 +505,7 @@ def plotPixelResiduals(exposure, warpedTemplateExposure, diffExposure, kernelCel
+             if not (cand.getStatus() == afwMath.SpatialCellCandidate.GOOD):
+                 continue
+ 
+-            cand = diffimLib.cast_KernelCandidateF(cand)
++            cand = diffimLib.KernelCandidateF.cast(cand)
+             diffim = cand.getDifferenceImage(diffimLib.KernelCandidateF.ORIG)
+             orig = cand.getScienceMaskedImage()
+ 
+diff --git tests/testBuildSingleKernelVisitor.py tests/testBuildSingleKernelVisitor.py
+index 8ea7709..4b339cd 100755
+--- tests/testBuildSingleKernelVisitor.py
++++ tests/testBuildSingleKernelVisitor.py
+@@ -257,7 +257,7 @@ def testVisit(self, nCell=3):
+ 
+         for cell in kernelCellSet.getCellList():
+             for cand in cell.begin(False):
+-                cand = ipDiffim.cast_KernelCandidateF(cand)
++                cand = ipDiffim.KernelCandidateF.cast(cand)
+                 self.assertEqual(cand.getStatus(), afwMath.SpatialCellCandidate.GOOD)
+ 
+     def tearDown(self):
+diff --git tests/testCompareToHotpants.py tests/testCompareToHotpants.py
+index 3516af5..f4b1649 100755
+--- tests/testCompareToHotpants.py
++++ tests/testCompareToHotpants.py
+@@ -154,7 +154,7 @@ def testSingleNoVariation(self):
+ 
+         for cell in self.kernelCellSet.getCellList():
+             for cand in cell.begin(False):  # False = include bad candidates
+-                cand = ipDiffim.cast_KernelCandidateF(cand)
++                cand = ipDiffim.KernelCandidateF.cast(cand)
+                 bsikv.processCandidate(cand)
+                 bspkv.processCandidate(cand)
+ 
+@@ -219,7 +219,7 @@ def testFourNoVariation(self):
+ 
+         for cell in self.kernelCellSet.getCellList():
+             for cand in cell.begin(False):  # False = include bad candidates
+-                cand = ipDiffim.cast_KernelCandidateF(cand)
++                cand = ipDiffim.KernelCandidateF.cast(cand)
+                 bsikv.processCandidate(cand)
+                 bspkv.processCandidate(cand)
+ 
+@@ -277,7 +277,7 @@ def testFourKernelVariation(self):
+ 
+         for cell in self.kernelCellSet.getCellList():
+             for cand in cell.begin(False):  # False = include bad candidates
+-                cand = ipDiffim.cast_KernelCandidateF(cand)
++                cand = ipDiffim.KernelCandidateF.cast(cand)
+                 bsikv.processCandidate(cand)
+                 bspkv.processCandidate(cand)
+ 
+@@ -377,7 +377,7 @@ def testFourBgVariation(self):
+ 
+         for cell in self.kernelCellSet.getCellList():
+             for cand in cell.begin(False):  # False = include bad candidates
+-                cand = ipDiffim.cast_KernelCandidateF(cand)
++                cand = ipDiffim.KernelCandidateF.cast(cand)
+                 bsikv.processCandidate(cand)
+                 bspkv.processCandidate(cand)
+ 
+@@ -439,7 +439,7 @@ def testFourVariation(self):
+ 
+         for cell in self.kernelCellSet.getCellList():
+             for cand in cell.begin(False):  # False = include bad candidates
+-                cand = ipDiffim.cast_KernelCandidateF(cand)
++                cand = ipDiffim.KernelCandidateF.cast(cand)
+                 bsikv.processCandidate(cand)
+                 bspkv.processCandidate(cand)
+ 
+diff --git tests/testKernelCandidateAndSolution.py tests/testKernelCandidateAndSolution.py
+index 1c708dd..bf6c340 100755
+--- tests/testKernelCandidateAndSolution.py
++++ tests/testKernelCandidateAndSolution.py
+@@ -492,7 +492,7 @@ def testInsert(self):
+         nSeen = 0
+         for cell in kernelCellSet.getCellList():
+             for cand in cell.begin(True):
+-                cand = ipDiffim.cast_KernelCandidateF(cand)
++                cand = ipDiffim.KernelCandidateF.cast(cand)
+                 self.assertEqual(cand.getStatus(), afwMath.SpatialCellCandidate.GOOD)
+                 nSeen += 1
+         self.assertEqual(nSeen, 1)
+diff --git tests/testSubtractExposures.py tests/testSubtractExposures.py
+index c6abc0c..387b502 100755
+--- tests/testSubtractExposures.py
++++ tests/testSubtractExposures.py
+@@ -213,8 +213,8 @@ def runXY0(self, poly, fitForBackground=False):
+                 if cand1.getStatus() == afwMath.SpatialCellCandidate.BAD:
+                     continue
+ 
+-                cand1 = ipDiffim.cast_KernelCandidateF(cand1)
+-                cand2 = ipDiffim.cast_KernelCandidateF(kernelCellSet2.getCandidateById(cand1.getId()+count))
++                cand1 = ipDiffim.KernelCandidateF.cast(cand1)
++                cand2 = ipDiffim.KernelCandidateF.cast(kernelCellSet2.getCandidateById(cand1.getId()+count))
+ 
+                 # positions are nearly the same (different at the 0.01 pixel level)
+                 self.assertAlmostEqual(cand1.getXCenter(), cand2.getXCenter(), delta=1e-1)

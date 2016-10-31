@@ -1,0 +1,271 @@
+diff --git include/lsst/meas/algorithms/PsfCandidate.h include/lsst/meas/algorithms/PsfCandidate.h
+index 3b6c1a5..ac496c2 100644
+--- include/lsst/meas/algorithms/PsfCandidate.h
++++ include/lsst/meas/algorithms/PsfCandidate.h
+@@ -53,13 +53,8 @@ namespace algorithms {
+      * a spatial model to the PSF.
+      */
+     template <typename PixelT>
+-    class PsfCandidate : public lsst::afw::math::SpatialCellMaskedImageCandidate<PixelT> {
+-        using lsst::afw::math::SpatialCellMaskedImageCandidate<PixelT>::_image;
++    class PsfCandidate : public lsst::afw::math::SpatialCellImageCandidate {
+     public:
+-        using lsst::afw::math::SpatialCellMaskedImageCandidate<PixelT>::getXCenter;
+-        using lsst::afw::math::SpatialCellMaskedImageCandidate<PixelT>::getYCenter;
+-        using lsst::afw::math::SpatialCellMaskedImageCandidate<PixelT>::getWidth;
+-        using lsst::afw::math::SpatialCellMaskedImageCandidate<PixelT>::getHeight;
+     
+         typedef std::shared_ptr<PsfCandidate<PixelT> > Ptr;
+         typedef std::shared_ptr<const PsfCandidate<PixelT> > ConstPtr;
+@@ -76,11 +71,11 @@ namespace algorithms {
+             PTR(afw::table::SourceRecord) const& source, ///< The detected Source
+             CONST_PTR(afw::image::Exposure<PixelT>) parentExposure ///< The image wherein lie the Sources
+         ) :
+-            afw::math::SpatialCellMaskedImageCandidate<PixelT>(source->getX(), source->getY()),
++            afw::math::SpatialCellImageCandidate(source->getX(), source->getY()),
+             _parentExposure(parentExposure),
+             _offsetImage(),
+             _source(source),
+-            _haveImage(false),
++            _image(nullptr),
+             _amplitude(0.0), _var(1.0)
+         {}
+         
+@@ -93,17 +88,17 @@ namespace algorithms {
+             double xCenter,    ///< the desired x center
+             double yCenter     ///< the desired y center
+         ) :
+-            afw::math::SpatialCellMaskedImageCandidate<PixelT>(xCenter, yCenter),
++            afw::math::SpatialCellImageCandidate(xCenter, yCenter),
+             _parentExposure(parentExposure),
+             _offsetImage(),
+             _source(source),
+-            _haveImage(false),
++            _image(nullptr),
+             _amplitude(0.0), _var(1.0)
+         {}
+         
+         /// Destructor
+         virtual ~PsfCandidate() {};
+-        
++
+         /**
+          * Return Cell rating
+          * 
+@@ -167,7 +162,7 @@ namespace algorithms {
+         PTR(afw::image::MaskedImage<PixelT>) mutable _offsetImage; // %image offset to put center on a pixel
+         PTR(afw::table::SourceRecord) _source; // the Source itself
+ 
+-        bool mutable _haveImage;                    // do we have an Image to return?
++        mutable std::shared_ptr<afw::image::MaskedImage<PixelT>> _image; // cutout image to return (cached)
+         double _amplitude;                          // best-fit amplitude of current PSF model
+         double _var;                                // variance to use when fitting this candidate
+         static int _border;                         // width of border of ignored pixels around _image
+diff --git python/lsst/meas/algorithms/pcaPsfDeterminer.py python/lsst/meas/algorithms/pcaPsfDeterminer.py
+index 20ecdf8..815066f 100644
+--- python/lsst/meas/algorithms/pcaPsfDeterminer.py
++++ python/lsst/meas/algorithms/pcaPsfDeterminer.py
+@@ -293,7 +293,7 @@ def determinePsf(self, exposure, psfCandidateList, metadata=None, flagKey=None):
+                 stamps = []
+                 for cell in psfCellSet.getCellList():
+                     for cand in cell.begin(not showBadCandidates): # maybe include bad candidates
+-                        cand = algorithmsLib.cast_PsfCandidateF(cand)
++                        cand = algorithmsLib.PsfCandidateF.cast(cand)
+ 
+                         try:
+                             im = cand.getMaskedImage()
+@@ -341,7 +341,7 @@ def determinePsf(self, exposure, psfCandidateList, metadata=None, flagKey=None):
+                 for cell in psfCellSet.getCellList():
+                     awfulCandidates = []
+                     for cand in cell.begin(False): # include bad candidates
+-                        cand = algorithmsLib.cast_PsfCandidateF(cand)
++                        cand = algorithmsLib.PsfCandidateF.cast(cand)
+                         cand.setStatus(afwMath.SpatialCellCandidate.UNKNOWN) # until proven guilty
+                         rchi2 = cand.getChi2()
+                         if not numpy.isfinite(rchi2) or rchi2 <= 0:
+@@ -362,7 +362,7 @@ def determinePsf(self, exposure, psfCandidateList, metadata=None, flagKey=None):
+             badCandidates = list()
+             for cell in psfCellSet.getCellList():
+                 for cand in cell.begin(False): # include bad candidates
+-                    cand = algorithmsLib.cast_PsfCandidateF(cand)
++                    cand = algorithmsLib.PsfCandidateF.cast(cand)
+                     rchi2 = cand.getChi2()  # reduced chi^2 when fitting PSF to candidate
+                     assert rchi2 > 0
+                     if rchi2 > self.config.reducedChi2ForPsfCandidates:
+@@ -394,7 +394,7 @@ def determinePsf(self, exposure, psfCandidateList, metadata=None, flagKey=None):
+             noSpatialKernel = afwMath.cast_LinearCombinationKernel(psf.getKernel())
+             for cell in psfCellSet.getCellList():
+                 for cand in cell.begin(False):
+-                    cand = algorithmsLib.cast_PsfCandidateF(cand)
++                    cand = algorithmsLib.PsfCandidateF.cast(cand)
+                     candCenter = afwGeom.PointD(cand.getXCenter(), cand.getYCenter())
+                     try:
+                         im = cand.getMaskedImage(kernel.getWidth(), kernel.getHeight())
+@@ -585,7 +585,7 @@ def determinePsf(self, exposure, psfCandidateList, metadata=None, flagKey=None):
+                 numAvailStars += 1
+ 
+             for cand in cell.begin(True):  # do ignore BAD stars
+-                cand = algorithmsLib.cast_PsfCandidateF(cand)
++                cand = algorithmsLib.PsfCandidateF.cast(cand)
+                 src = cand.getSource()
+                 if flagKey is not None:
+                     src.set(flagKey, True)
+@@ -619,6 +619,6 @@ def candidatesIter(psfCellSet, ignoreBad=True):
+     """
+     for cell in psfCellSet.getCellList():
+         for cand in cell.begin(ignoreBad):
+-            yield (cell, algorithmsLib.cast_PsfCandidateF(cand))
++            yield (cell, algorithmsLib.PsfCandidateF.cast(cand))
+ 
+ psfDeterminerRegistry.register("pca", PcaPsfDeterminerTask)
+diff --git python/lsst/meas/algorithms/psf.i python/lsst/meas/algorithms/psf.i
+index 2ca4813..38651d8 100644
+--- python/lsst/meas/algorithms/psf.i
++++ python/lsst/meas/algorithms/psf.i
+@@ -46,16 +46,7 @@ lsst::afw::image::MaskedImage<PIXTYPE, lsst::afw::image::MaskPixel, lsst::afw::i
+ %template(PsfCandidate##NAME) lsst::meas::algorithms::PsfCandidate<TYPE>;
+ %template(makePsfCandidate) lsst::meas::algorithms::makePsfCandidate<TYPE>;
+ 
+-//----------------------------------------------------------------------------
+-// THIS CAST INTERFACE NOW DEPRECATED IN FAVOR OF %castShared
+-%inline %{
+-    PTR(lsst::meas::algorithms::PsfCandidate<TYPE>)
+-        cast_PsfCandidate##NAME(PTR(lsst::afw::math::SpatialCellCandidate) candidate) {
+-        return std::dynamic_pointer_cast<lsst::meas::algorithms::PsfCandidate<TYPE> >(candidate);
+-    }
+-%}
+-//----------------------------------------------------------------------------
+-
++%castShared(lsst::meas::algorithms::PsfCandidate<TYPE>, lsst::afw::math::SpatialCellImageCandidate)
+ %castShared(lsst::meas::algorithms::PsfCandidate<TYPE>, lsst::afw::math::SpatialCellCandidate)
+ 
+ %enddef
+diff --git python/lsst/meas/algorithms/utils.py python/lsst/meas/algorithms/utils.py
+index 0347979..bc7a96a 100644
+--- python/lsst/meas/algorithms/utils.py
++++ python/lsst/meas/algorithms/utils.py
+@@ -98,7 +98,7 @@ def showPsfSpatialCells(exposure, psfCellSet, nMaxPerCell=-1, showChi2=False, sh
+                 if nMaxPerCell > 0:
+                     i += 1
+ 
+-                cand = algorithmsLib.cast_PsfCandidateF(cand)
++                cand = algorithmsLib.PsfCandidateF.cast(cand)
+ 
+                 xc, yc = cand.getXCenter() + origin[0], cand.getYCenter() + origin[1]
+ 
+@@ -156,7 +156,7 @@ def showPsfCandidates(exposure, psfCellSet, psf=None, frame=None, normalize=True
+ 
+     for cell in psfCellSet.getCellList():
+         for cand in cell.begin(False): # include bad candidates
+-            cand = algorithmsLib.cast_PsfCandidateF(cand)
++            cand = algorithmsLib.PsfCandidateF.cast(cand)
+ 
+             rchi2 = cand.getChi2()
+             if rchi2 > 1e100:
+@@ -468,7 +468,7 @@ def plotPsfSpatialModel(exposure, psf, psfCellSet, showBadCandidates=True, numSa
+     badAmps = list()
+     for cell in psfCellSet.getCellList():
+         for cand in cell.begin(False):
+-            cand = algorithmsLib.cast_PsfCandidateF(cand)
++            cand = algorithmsLib.PsfCandidateF.cast(cand)
+             if not showBadCandidates and cand.isBad():
+                 continue
+             candCenter = afwGeom.PointD(cand.getXCenter(), cand.getYCenter())
+@@ -831,7 +831,7 @@ def saveSpatialCellSet(psfCellSet, fileName="foo.fits", frame=None):
+     mode = "w"
+     for cell in psfCellSet.getCellList():
+         for cand in cell.begin(False):  # include bad candidates
+-            cand = algorithmsLib.cast_PsfCandidateF(cand)
++            cand = algorithmsLib.PsfCandidateF.cast(cand)
+ 
+             dx = afwImage.positionToIndex(cand.getXCenter(), True)[1]
+             dy = afwImage.positionToIndex(cand.getYCenter(), True)[1]
+diff --git src/PsfCandidate.cc src/PsfCandidate.cc
+index 0b362ba..b54472a 100644
+--- src/PsfCandidate.cc
++++ src/PsfCandidate.cc
+@@ -294,17 +294,9 @@ measAlg::PsfCandidate<PixelT>::extractImage(
+ template <typename PixelT>
+ CONST_PTR(afwImage::MaskedImage<PixelT>)
+ measAlg::PsfCandidate<PixelT>::getMaskedImage(int width, int height) const {
+-
+-
+-    if (_haveImage && (width != _image->getWidth() || height != _image->getHeight())) {
+-        _haveImage = false;
+-    }
+-
+-    if (!_haveImage) {
++    if (!_image || (width != _image->getWidth() || height != _image->getHeight())) {
+         _image = extractImage(width, height);
+-        _haveImage = true;
+     }
+-
+     return _image;
+ }
+ 
+@@ -315,12 +307,9 @@ measAlg::PsfCandidate<PixelT>::getMaskedImage(int width, int height) const {
+  */
+ template <typename PixelT>
+ CONST_PTR(afwImage::MaskedImage<PixelT>) measAlg::PsfCandidate<PixelT>::getMaskedImage() const {
+-
+     int const width = getWidth() == 0 ? _defaultWidth : getWidth();
+     int const height = getHeight() == 0 ? _defaultWidth : getHeight();
+-
+     return getMaskedImage(width, height);
+-
+ }
+ 
+ /**
+diff --git tests/testPsfDetermination.py tests/testPsfDetermination.py
+index ec552c8..97c372a 100755
+--- tests/testPsfDetermination.py
++++ tests/testPsfDetermination.py
+@@ -421,7 +421,7 @@ def testCandidateList(self):
+                 # don't know about getMaskedImage;  so cast the pointer to
+                 # SpatialCellMaskedImageCandidate<float> and all will be well
+                 #
+-                cand = afwMath.cast_SpatialCellMaskedImageCandidateF(cell[0])
++                cand = measAlg.PsfCandidateF.cast(cell[0])
+                 width, height = 29, 25
+                 cand.setWidth(width)
+                 cand.setHeight(height)
+diff --git tests/testPsfIO.py tests/testPsfIO.py
+index 42911c8..32422d9 100755
+--- tests/testPsfIO.py
++++ tests/testPsfIO.py
+@@ -182,7 +182,7 @@ def testGetPcaKernel(self):
+                 i = 0
+                 for cand in cell:
+                     i += 1
+-                    source = algorithms.cast_PsfCandidateF(cand).getSource()
++                    source = algorithms.PsfCandidateF.cast(cand).getSource()
+ 
+                     xc, yc = source.getXAstrom() - self.mi.getX0(), source.getYAstrom() - self.mi.getY0()
+                     if i <= nStarPerCell:
+@@ -238,7 +238,7 @@ def testGetPcaKernel(self):
+                     # it knows is that we have a SpatialCellCandidate, and SpatialCellCandidates
+                     # don't know about getMaskedImage;  so cast the pointer to PsfCandidate
+                     #
+-                    cand = algorithms.cast_PsfCandidateF(cand)
++                    cand = algorithms.PsfCandidateF.cast(cand)
+                     s = cand.getSource()
+ 
+                     im = cand.getMaskedImage()
+@@ -335,12 +335,12 @@ def testCandidateList(self):
+         for cell in self.cellSet.getCellList():
+             for cand in cell:
+                 #
+-                # Swig doesn't know that we inherited from SpatialCellMaskedImageCandidate;  all
+-                # it knows is that we have a SpatialCellCandidate, and SpatialCellCandidates
+-                # don't know about getMaskedImage;  so cast the pointer to
+-                # SpatialCellMaskedImageCandidate<float> and all will be well
++                # Swig doesn't know that we PsfCandidate;  all it knows is
++                # that we have a SpatialCellCandidate, and
++                # SpatialCellCandidates don't know about getMaskedImage;  so
++                # cast the pointer to PsfCandidate<float> and all will be well
+                 #
+-                cand = afwMath.cast_SpatialCellMaskedImageCandidateF(cell[0])
++                cand = algorithms.PsfCandidateF.cast(cell[0])
+                 width, height = 15, 17
+                 cand.setWidth(width)
+                 cand.setHeight(height)

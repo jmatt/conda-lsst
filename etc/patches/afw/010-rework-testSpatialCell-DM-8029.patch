@@ -1,0 +1,381 @@
+diff --git examples/testSpatialCell.cc examples/testSpatialCell.cc
+index 09ffe0c..712ce75 100644
+--- examples/testSpatialCell.cc
++++ examples/testSpatialCell.cc
+@@ -30,10 +30,10 @@
+ ExampleCandidate::ExampleCandidate(
+         float const xCenter,            ///< The object's column-centre
+         float const yCenter,            ///< The object's row-centre
+-        ExampleCandidate::MaskedImageT::ConstPtr parent, ///< the parent image
++        std::shared_ptr<MaskedImageT const> parent, ///< the parent image
+         lsst::afw::geom::Box2I bbox     ///< The object's bounding box
+                                       ) :
+-    lsst::afw::math::SpatialCellMaskedImageCandidate<PixelT>(xCenter, yCenter), _parent(parent), _bbox(bbox) {
++    lsst::afw::math::SpatialCellImageCandidate(xCenter, yCenter), _parent(parent), _bbox(bbox) {
+ }
+ 
+ /**
+@@ -46,10 +46,9 @@ double ExampleCandidate::getCandidateRating() const {
+ /**
+  * Return the %image
+  */
+-ExampleCandidate::MaskedImageT::ConstPtr ExampleCandidate::getMaskedImage() const {
+-    if (_image.get() == NULL) {
+-        _image = MaskedImageT::Ptr(new MaskedImageT(*_parent, _bbox, lsst::afw::image::LOCAL));
++std::shared_ptr<ExampleCandidate::MaskedImageT const> ExampleCandidate::getMaskedImage() const {
++    if (!_image) {
++        _image = std::make_shared<MaskedImageT>(*_parent, _bbox, lsst::afw::image::LOCAL);
+     }
+-
+     return _image;
+ }
+diff --git examples/testSpatialCell.h examples/testSpatialCell.h
+index d8a7946..460366c 100644
+--- examples/testSpatialCell.h
++++ examples/testSpatialCell.h
+@@ -32,22 +32,23 @@
+ /*
+  * Test class for SpatialCellImageCandidate
+  */
+-class ExampleCandidate : public lsst::afw::math::SpatialCellMaskedImageCandidate<float> {
++class ExampleCandidate : public lsst::afw::math::SpatialCellImageCandidate {
+ public:
+-    typedef std::shared_ptr<ExampleCandidate> Ptr;
+     typedef float PixelT;
+     typedef lsst::afw::image::MaskedImage<PixelT> MaskedImageT;
+ 
+     ExampleCandidate(float const xCenter, float const yCenter,
+-                     MaskedImageT::ConstPtr parent, lsst::afw::geom::Box2I bbox);
++                     std::shared_ptr<MaskedImageT const> parent, lsst::afw::geom::Box2I bbox);
+ 
+     lsst::afw::geom::Box2I getBBox() const { return _bbox; }
+ 
+     double getCandidateRating() const;
+ 
+-    MaskedImageT::ConstPtr getMaskedImage() const;
++    std::shared_ptr<MaskedImageT const> getMaskedImage() const;
++
+ private:
+-    ExampleCandidate::MaskedImageT::ConstPtr _parent;
++    mutable std::shared_ptr<MaskedImageT> _image;
++    std::shared_ptr<MaskedImageT const> _parent;
+     lsst::afw::geom::Box2I _bbox;
+ };
+ 
+diff --git include/lsst/afw/math/SpatialCell.h include/lsst/afw/math/SpatialCell.h
+index e81bb29..f5645ab 100644
+--- include/lsst/afw/math/SpatialCell.h
++++ include/lsst/afw/math/SpatialCell.h
+@@ -129,7 +129,6 @@ namespace math {
+      * Base class for candidate objects in a SpatialCell that are able to return an Image of some sort
+      * (e.g. a PSF or a DIA kernel)
+      */
+-    template<typename PixelT>
+     class SpatialCellImageCandidate : public SpatialCellCandidate {
+     public:
+         typedef std::shared_ptr<SpatialCellImageCandidate> Ptr;
+@@ -139,14 +138,10 @@ namespace math {
+         SpatialCellImageCandidate(float const xCenter, ///< The object's column-centre
+                                   float const yCenter  ///< The object's row-centre
+                                  ) : SpatialCellCandidate(xCenter, yCenter),
+-                                     _image(PTR(lsst::afw::image::Image<PixelT>)()),
+                                      _chi2(std::numeric_limits<double>::max()) {
+         }
+         virtual ~SpatialCellImageCandidate() {}
+ 
+-        /// Return the Candidate's Image
+-        virtual CONST_PTR(lsst::afw::image::Image<PixelT>) getImage() const = 0;
+-
+         /// Set the width of the image that getImage should return
+         static void setWidth(int width) {
+             _width = width;
+@@ -164,81 +159,12 @@ namespace math {
+         /// Set the candidate's chi^2
+         void setChi2(double chi2) { _chi2 = chi2; }
+ 
+-    protected:
+-        PTR(lsst::afw::image::Image<PixelT>) mutable _image; ///< a pointer to the Image, for the use of the base class
+     private:
+         static int _width;              // the width of images to return; may be ignored by subclasses
+         static int _height;             // the height of images to return; may be ignored by subclasses
+         double _chi2;                   // chi^2 for fit
+     };
+ 
+-    /// The width of images that SpatialCellImageCandidate should return; may be ignored by subclasses
+-    template<typename PixelT>
+-    int SpatialCellImageCandidate<PixelT>::_width = 0;
+-
+-    /// The height of images that SpatialCellImageCandidate should return; may be ignored by subclasses
+-    template<typename PixelT>
+-    int SpatialCellImageCandidate<PixelT>::_height = 0;
+-
+-    /************************************************************************************************************/
+-    /**
+-     * Base class for candidate objects in a SpatialCell that are able to return a MaskedImage of some sort
+-     * (e.g. a PSF or a DIA kernel)
+-     */
+-    template<typename PixelT>
+-    class SpatialCellMaskedImageCandidate : public SpatialCellCandidate {
+-    public:
+-        typedef std::shared_ptr<SpatialCellMaskedImageCandidate> Ptr;
+-        typedef std::shared_ptr<const SpatialCellMaskedImageCandidate> ConstPtr;
+-
+-        /// ctor
+-        SpatialCellMaskedImageCandidate(float const xCenter, ///< The object's column-centre
+-                                        float const yCenter  ///< The object's row-centre
+-                                       ) : SpatialCellCandidate(xCenter, yCenter),
+-                                           _image(PTR(lsst::afw::image::MaskedImage<PixelT,
+-                                                      lsst::afw::image::MaskPixel,
+-                                                      lsst::afw::image::VariancePixel>)()),
+-                                           _chi2(std::numeric_limits<double>::max()) {
+-        }
+-        virtual ~SpatialCellMaskedImageCandidate() {}
+-
+-        /// Return the Candidate's Image
+-        virtual CONST_PTR(lsst::afw::image::MaskedImage<PixelT,lsst::afw::image::MaskPixel,
+-                          lsst::afw::image::VariancePixel>) getMaskedImage() const = 0;
+-
+-        /// Set the width of the image that getImage should return
+-        static void setWidth(int width) {
+-            _width = width;
+-        }
+-        /// Return the width of the image that getImage should return
+-        static int getWidth() { return _width; }
+-
+-        /// Set the height of the image that getImage should return
+-        static void setHeight(int height) { _height = height; }
+-        /// Return the height of the image that getImage should return
+-        static int getHeight() { return _height; }
+-
+-        /// Return the candidate's chi^2
+-        double getChi2() const { return _chi2; }
+-        /// Set the candidate's chi^2
+-        void setChi2(double chi2) { _chi2 = chi2; }
+-
+-    protected:
+-        PTR(lsst::afw::image::MaskedImage<PixelT,lsst::afw::image::MaskPixel,
+-            lsst::afw::image::VariancePixel>) mutable _image; ///< a pointer to the MaskedImage, for the use of the base class
+-    private:
+-        static int _width;              // the width of images to return; may be ignored by subclasses
+-        static int _height;             // the height of images to return; may be ignored by subclasses
+-        double _chi2;                   // chi^2 for fit
+-    };
+-
+-    /// The width of images that SpatialCellMaskedImageCandidate should return; may be ignored by subclasses
+-    template<typename PixelT>
+-    int SpatialCellMaskedImageCandidate<PixelT>::_width = 0;
+-
+-    /// The height of images that SpatialCellMaskedImageCandidate should return; may be ignored by subclasses
+-    template<typename PixelT>
+-    int SpatialCellMaskedImageCandidate<PixelT>::_height = 0;
+ 
+     /************************************************************************************************************/
+     /**
+diff --git python/lsst/afw/math/spatialCell.i python/lsst/afw/math/spatialCell.i
+index 8beaf5c..b2c72ed 100644
+--- python/lsst/afw/math/spatialCell.i
++++ python/lsst/afw/math/spatialCell.i
+@@ -22,57 +22,6 @@
+  * see <http://www.lsstcorp.org/LegalNotices/>.
+  */
+ 
+-//
+-// A couple of macros (%IMAGE and %MASKEDIMAGE) to provide MaskedImage's default arguments,
+-// We'll use these to define meta-macros (e.g. %SpatialCellImageCandidatePtr)
+-//
+-%define %IMAGE(PIXTYPE)
+-lsst::afw::image::Image<PIXTYPE>
+-%enddef
+-
+-%define %MASKEDIMAGE(PIXTYPE)
+-lsst::afw::image::MaskedImage<PIXTYPE, lsst::afw::image::MaskPixel, lsst::afw::image::VariancePixel>
+-%enddef
+-
+-//
+-// Must go BEFORE the include
+-//
+-%define %SpatialCellImageCandidatePtrs(TYPE, ...)
+-    %shared_ptr(lsst::afw::math::SpatialCellImageCandidate<TYPE>);
+-    %shared_ptr(lsst::afw::math::SpatialCellMaskedImageCandidate<TYPE>);
+-%enddef
+-//
+-// Must go AFTER the include
+-//
+-%define %SpatialCellImageCandidates(NAME, TYPE)
+-    %template(SpatialCellImageCandidate##NAME) lsst::afw::math::SpatialCellImageCandidate<TYPE>;
+-    %template(SpatialCellMaskedImageCandidate##NAME) lsst::afw::math::SpatialCellMaskedImageCandidate<TYPE>;
+-
+-    //--------------------------------------------------------
+-    // THESE CASTS NOW DEPRECATED IN FAVOR OF %castShared
+-    %inline %{
+-        std::shared_ptr<lsst::afw::math::SpatialCellImageCandidate<TYPE> >
+-        cast_SpatialCellImageCandidate##NAME(std::shared_ptr<lsst::afw::math::SpatialCellCandidate> candidate) {
+-            return std::dynamic_pointer_cast<lsst::afw::math::SpatialCellImageCandidate<TYPE> >(candidate);
+-        }
+-
+-        std::shared_ptr<lsst::afw::math::SpatialCellMaskedImageCandidate<TYPE> >
+-        cast_SpatialCellMaskedImageCandidate##NAME(std::shared_ptr<lsst::afw::math::SpatialCellCandidate> candidate) {
+-             return std::dynamic_pointer_cast<lsst::afw::math::SpatialCellMaskedImageCandidate<TYPE> >(candidate);
+-        }
+-    %}
+-    //--------------------------------------------------------
+-
+-    %castShared(lsst::afw::math::SpatialCellImageCandidate<TYPE>, lsst::afw::math::SpatialCellCandidate)
+-    %castShared(lsst::afw::math::SpatialCellMaskedImageCandidate<TYPE>, lsst::afw::math::SpatialCellCandidate)
+-
+-%enddef
+-
+-//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+-//
+-// OK, now we'll generate some code
+-//
+-
+ %{
+ #include <memory>
+ #include "lsst/afw/math/SpatialCell.h"
+@@ -80,11 +29,9 @@ lsst::afw::image::MaskedImage<PIXTYPE, lsst::afw::image::MaskPixel, lsst::afw::i
+ 
+ %shared_ptr(lsst::afw::math::CandidateVisitor)
+ %shared_ptr(lsst::afw::math::SpatialCellCandidate);
++%shared_ptr(lsst::afw::math::SpatialCellImageCandidate);
+ %shared_ptr(lsst::afw::math::SpatialCell);
+ 
+-%SpatialCellImageCandidatePtrs(float);
+-%SpatialCellImageCandidatePtrs(double);
+-
+ %rename(__incr__) lsst::afw::math::SpatialCellCandidateIterator::operator++;
+ %rename(__deref__) lsst::afw::math::SpatialCellCandidateIterator::operator*;
+ %rename(__eq__) lsst::afw::math::SpatialCellCandidateIterator::operator==;
+@@ -95,10 +42,6 @@ lsst::afw::image::MaskedImage<PIXTYPE, lsst::afw::image::MaskPixel, lsst::afw::i
+ %template(SpatialCellCandidateList) std::vector<std::shared_ptr<lsst::afw::math::SpatialCellCandidate> >;
+ %template(SpatialCellList) std::vector<std::shared_ptr<lsst::afw::math::SpatialCell> >;
+ 
+-%SpatialCellImageCandidates(F, float);
+-%SpatialCellImageCandidates(D, double);
+-
+-
+ %extend lsst::afw::math::SpatialCell {
+     %pythoncode %{
+         def __getitem__(self, ind):
+@@ -121,3 +64,5 @@ lsst::afw::image::MaskedImage<PIXTYPE, lsst::afw::image::MaskPixel, lsst::afw::i
+             self.__incr__()
+     %}
+ }
++
++%castShared(lsst::afw::math::SpatialCellImageCandidate, lsst::afw::math::SpatialCellCandidate)
+\ No newline at end of file
+diff --git src/math/SpatialCell.cc src/math/SpatialCell.cc
+index a196b24..8ba4de9 100644
+--- src/math/SpatialCell.cc
++++ src/math/SpatialCell.cc
+@@ -73,6 +73,10 @@ void SpatialCellCandidate::setStatus(Status status) {
+                       (boost::format("Saw unknown status %d") % status).str());
+ }
+ 
++int SpatialCellImageCandidate::_width = 0;
++
++int SpatialCellImageCandidate::_height = 0;
++
+ /************************************************************************************************************/
+ /**
+  * Ctor
+diff --git tests/testLib.i tests/testLib.i
+index b5badef..1812a57 100644
+--- tests/testLib.i
++++ tests/testLib.i
+@@ -52,7 +52,7 @@ Various swigged-up C++ classes for testing
+ 
+ %shared_ptr(TestCandidate);
+ %shared_ptr(TestCandidateVisitor);
+-%shared_ptr(TestMaskedImageCandidate);
++%shared_ptr(TestImageCandidate);
+ 
+ %inline %{
+     /*
+@@ -96,19 +96,19 @@ Various swigged-up C++ classes for testing
+         int _n;                         // number of TestCandidates
+     };
+ 
+-    /************************************************************************************************************/
++    /*******************************************************************************************************/
+     /*
+-     * Test class for SpatialCellMaskedImageCandidate
++     * Test class for SpatialCellImageCandidate
+      */
+-    class TestMaskedImageCandidate : public lsst::afw::math::SpatialCellMaskedImageCandidate<float> {
++    class TestImageCandidate : public lsst::afw::math::SpatialCellImageCandidate {
+     public:
+         typedef lsst::afw::image::MaskedImage<float> MaskedImageT;
+ 
+-        TestMaskedImageCandidate(float const xCenter, ///< The object's column-centre
+-                                 float const yCenter, ///< The object's row-centre
+-                                 float const flux     ///< The object's flux
+-                                ) :
+-            lsst::afw::math::SpatialCellMaskedImageCandidate<float>(xCenter, yCenter), _flux(flux) {
++        TestImageCandidate(float const xCenter, ///< The object's column-centre
++                           float const yCenter, ///< The object's row-centre
++                           float const flux     ///< The object's flux
++                           ) :
++            lsst::afw::math::SpatialCellImageCandidate(xCenter, yCenter), _flux(flux) {
+         }
+ 
+         /// Return candidates rating
+@@ -117,15 +117,18 @@ Various swigged-up C++ classes for testing
+         }
+ 
+         /// Return the %image
+-        MaskedImageT::ConstPtr getMaskedImage() const {
+-            if (_image.get() == NULL) {
+-                _image = MaskedImageT::Ptr(new MaskedImageT(lsst::afw::geom::ExtentI(getWidth(), getHeight())));
++        std::shared_ptr<MaskedImageT const> getMaskedImage() const {
++            if (!_image) {
++                _image = std::make_shared<MaskedImageT>(lsst::afw::geom::ExtentI(getWidth(), getHeight()));
+                 *_image->getImage() = _flux;
+             }
+-
+             return _image;
+         }
++
+     private:
++        mutable std::shared_ptr<MaskedImageT> _image;
+         double _flux;
+     };
+ %}
++
++%castShared(TestImageCandidate, lsst::afw::math::SpatialCellCandidate)
+\ No newline at end of file
+diff --git tests/testSpatialCell.py tests/testSpatialCell.py
+index 5fe5893..72b5fdb 100755
+--- tests/testSpatialCell.py
++++ tests/testSpatialCell.py
+@@ -288,8 +288,8 @@ def sortKey(a):
+                          [cand.getCandidateRating() for cand in cell1])
+ 
+ 
+-class TestMaskedImageCandidateCase(unittest.TestCase):
+-    """A test case for TestMaskedImageCandidate"""
++class TestImageCandidateCase(unittest.TestCase):
++    """A test case for TestImageCandidate"""
+ 
+     def setUp(self):
+         self.cellSet = afwMath.SpatialCellSet(afwGeom.Box2I(
+@@ -302,16 +302,16 @@ def testInsertCandidate(self):
+         """Test that we can use SpatialCellMaskedImageCandidate"""
+ 
+         flux = 10
+-        self.cellSet.insertCandidate(testLib.TestMaskedImageCandidate(0, 0, flux))
++        self.cellSet.insertCandidate(testLib.TestImageCandidate(0, 0, flux))
+ 
+         cand = self.cellSet.getCellList()[0][0]
+         #
+-        # Swig doesn't know that we're a SpatialCellMaskedImageCandidate;  all it knows is that we have
++        # Swig doesn't know that we're a SpatialCellImageCandidate;  all it knows is that we have
+         # a SpatialCellCandidate, and SpatialCellCandidates don't know about getMaskedImage;  so cast the
+         # pointer to SpatialCellMaskedImageCandidate<Image<float> > and all will be well;
+         #
+ 
+-        cand = afwMath.SpatialCellMaskedImageCandidateF.cast(cand)
++        cand = testLib.TestImageCandidate.cast(cand)
+ 
+         width, height = 15, 21
+         cand.setWidth(width)

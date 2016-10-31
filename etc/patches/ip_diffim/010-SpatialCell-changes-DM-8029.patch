@@ -1,0 +1,59 @@
+diff --git include/lsst/ip/diffim/KernelCandidate.h include/lsst/ip/diffim/KernelCandidate.h
+index 767e644..e8df2cc 100644
+--- include/lsst/ip/diffim/KernelCandidate.h
++++ include/lsst/ip/diffim/KernelCandidate.h
+@@ -35,15 +35,10 @@ namespace diffim {
+      * @ingroup ip_diffim
+      */
+     template <typename _PixelT>
+-    class KernelCandidate :
+-        public afw::math::SpatialCellImageCandidate<afw::math::Kernel::Pixel> {
++    class KernelCandidate : public afw::math::SpatialCellImageCandidate {
+     public:
+         typedef afw::image::Image<afw::math::Kernel::Pixel> ImageT;
+         typedef _PixelT PixelT;         // _after_ afw::math::Kernel::Pixel
+-
+-    private:
+-        using afw::math::SpatialCellImageCandidate<afw::math::Kernel::Pixel>::_image;
+-
+     public:
+         typedef std::shared_ptr<KernelCandidate> Ptr;
+         typedef std::shared_ptr<afw::image::MaskedImage<PixelT> > MaskedImagePtr;
+diff --git python/lsst/ip/diffim/diffimLib.i python/lsst/ip/diffim/diffimLib.i
+index 536b3eb..7f320b4 100644
+--- python/lsst/ip/diffim/diffimLib.i
++++ python/lsst/ip/diffim/diffimLib.i
+@@ -223,9 +223,10 @@ lsst::afw::image::Image<PIXTYPE>
+         return std::dynamic_pointer_cast<lsst::ip::diffim::KernelCandidate<TYPE> >(candidate);
+     }
+ %}
++%castShared(lsst::ip::diffim::KernelCandidate<TYPE>, lsst::afw::math::SpatialCellImageCandidate);
++%castShared(lsst::ip::diffim::KernelCandidate<TYPE>, lsst::afw::math::SpatialCellCandidate);
+ %enddef
+ 
+-%include "lsst/ip/diffim/KernelCandidate.h"
+ %KernelCandidatePtr(F, float);
+ 
+ %include "lsst/ip/diffim/KernelCandidate.h"
+diff --git src/KernelCandidate.cc src/KernelCandidate.cc
+index 7d0bc09..fca2c37 100644
+--- src/KernelCandidate.cc
++++ src/KernelCandidate.cc
+@@ -39,7 +39,7 @@ namespace diffim {
+         MaskedImagePtr const& scienceMaskedImage,
+         lsst::pex::policy::Policy const& policy
+         ) :
+-        lsst::afw::math::SpatialCellImageCandidate<lsst::afw::math::Kernel::Pixel>(xCenter, yCenter),
++        lsst::afw::math::SpatialCellImageCandidate(xCenter, yCenter),
+         _templateMaskedImage(templateMaskedImage),
+         _scienceMaskedImage(scienceMaskedImage),
+         _varianceEstimate(),
+@@ -78,7 +78,7 @@ namespace diffim {
+         MaskedImagePtr const& scienceMaskedImage,
+         lsst::pex::policy::Policy const& policy
+         ) :
+-        lsst::afw::math::SpatialCellImageCandidate<lsst::afw::math::Kernel::Pixel>(source->getX(), source->getY()),
++        lsst::afw::math::SpatialCellImageCandidate(source->getX(), source->getY()),
+         _templateMaskedImage(templateMaskedImage),
+         _scienceMaskedImage(scienceMaskedImage),
+         _varianceEstimate(),
