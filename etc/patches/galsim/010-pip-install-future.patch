@@ -1,0 +1,12 @@
+diff --git ups/eupspkg.cfg.sh ups/eupspkg.cfg.sh
+index c2680e3..1421da2 100644
+--- ups/eupspkg.cfg.sh
++++ ups/eupspkg.cfg.sh
+@@ -3,6 +3,7 @@ SCONSFLAGS+=" PREFIX=$PREFIX PYPREFIX=$PREFIX/lib/python"
+ SCONSFLAGS+=" TMV_DIR=$TMV_DIR EXTRA_LIB_PATH=$TMV_DIR/lib EXTRA_INCLUDE_PATH=$TMV_DIR/include"
+ SCONSFLAGS+=" USE_UNKNOWN_VARS=true"
+ export SCONSFLAGS
++pip install future
+ 
+ if [[ $OSTYPE == darwin* ]]; then
+ 	# Add DYLD_LIBRARY_PATH to SCONSFLAGS (deriving it from LSST_LIBRARY_PATH).
