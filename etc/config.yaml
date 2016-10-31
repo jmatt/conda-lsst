@@ -13,7 +13,8 @@ git-upstreams:
 # Any SHA1 overrides to be applied to the build manifest
 # This is a list of mapping of 'product_name' -> 'SHA1-or-ref'
 #
-override_gitrev: {}
+override_gitrev: {'mariadbclient': '73b49da5098fb9e3aec157f1df0d3c1748ceea5e',
+                  'mariadb': '65eddaa0fadeab3274af9b3e3769e76ab2854c7b'}
 
 #
 # Directory with patches
@@ -47,6 +48,11 @@ internal_products:
   sqlalchemy:
   requests:
   astropy:
+  cmake:
+  future:
+  pandas:
+  cython:
+  mpi4py:
 
 #
 # EUPS products we should ignore alltogether
@@ -60,6 +66,12 @@ skip_products:
 # Prefix to add to all packages we'll buld
 #
 lsst_prefix: "lsst-"
+
+#
+# Use Conda recipes found in etc/recipes first before using remote
+# git repositories.
+#
+prefer_etc_recipes: yes
 
 #
 # Explicit overrides for mapping of EUPS->conda product names
@@ -91,6 +103,9 @@ dependencies:
   sims_catalogs_generation:
     run:   [ sqlalchemy ]
     build: [ sqlalchemy ]
+  sims-catutils:
+    run:   [ pandas ]
+    build: [ pandas ]
   sims_skybrightness:
     run:   [ sqlalchemy ]
     build: [ sqlalchemy ]
@@ -135,9 +150,12 @@ dependencies:
   sims_movingObjects:
     run:   [ pandas, numexpr ]
     build: [ pandas, numexpr ]
-  oorb:
-    build: [ "gcc ==4.8.5" ]
-    run:   [ "libgcc >=4.8.5" ]
+  ctrl_pool:
+    build: [ "mpi4py" ]
+    run:   [ "mpi4py" ]
+  mpi4py:
+    build: [ "cython" ]
+    run:   [ "cython" ]
   "*":
     run:
       - "nomkl                         # [not osx]"
@@ -146,8 +164,6 @@ dependencies:
     build:
       - "nomkl                         # [not osx]"
       - recipe/eups >=2.0.2
-      - "gcc ==4.8.5                   # [not osx]"
-      - "patchelf ==0.8                # [not osx]"
 
 #
 # Pin a specific version of a package. This will be applied to all
@@ -156,9 +172,12 @@ dependencies:
 # conda packages used as dependencies.
 #
 pin_versions:
+  astropy:
+    build: "1.1.2"
+    run: ">=1.1.2,<1.3"
   numpy:
-    build: "==1.9"
-    run:   ">=1.9"
+    build: "1.10.4"
+    run:   ">=1.10.4,<1.12"
   python:
     build: "2.7.*"
     run:   "2.7.*"
@@ -168,6 +187,9 @@ pin_versions:
   scipy:
     build: "0.16.*"
     run:   ">=0.16"
+  mpi4py:
+    build: "2.0.0"
+    run:   "2.0.0"
 
 #
 # which packages to build on which OS. The effect of this will be to add
