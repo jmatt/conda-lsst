@@ -1,0 +1,48 @@
+#
+# Run `conda build .` to build this package
+#
+
+package:
+  name: "lsst-ndarray"
+  version: "1.2.0.1"
+
+source:
+  git_rev: "f968e944ffa8c773c3804511af019d8d1c7fcf32"
+  git_url: "https://github.com/LSST/ndarray"
+  patches:
+        - 000-patch-eups-to-remove-fft-test.patch
+
+build:
+  number: 0
+  string: "0"
+#  binary_relocation: false
+
+requirements:
+  build:
+    - eups >=2.0.2
+    - lsst-boost ==1.60.1
+    - lsst-eigen ==3.2.5.2
+    - lsst-fftw ==3.3.4.2
+    - lsst-numpy-eups-configs ==0.0.3
+    - lsst-python-eups-configs ==0.0.5
+    - lsst-swig-eups-configs ==3.0.10
+    - nomkl                         #
+    - numpy 1.10.4
+    - python 2.7.*
+    - swig ==3.0.10
+
+  run:
+    - eups >=2.0.2
+    - libgcc >=4.8.5                # [not osx]
+    - lsst-boost ==1.60.1
+    - lsst-eigen ==3.2.5.2
+    - lsst-fftw ==3.3.4.2
+    - lsst-numpy-eups-configs ==0.0.3
+    - lsst-python-eups-configs ==0.0.5
+    - lsst-swig-eups-configs ==3.0.10
+    - nomkl                         #
+
+about:
+  home: "https://github.com/LSST/ndarray"
+#  license: GPLv2
+#  summary: A version manager tracking product dependencies

@@ -1,0 +1,30 @@
+diff --git patches/000-remove-fft-test.patch patches/000-remove-fft-test.patch
+new file mode 100644
+index 0000000..20002ab
+--- /dev/null
++++ patches/000-remove-fft-test.patch
+@@ -0,0 +1,24 @@
++diff -ru a/tests/CMakeLists.txt b/tests/CMakeLists.txt
++--- a/tests/CMakeLists.txt	2016-09-26 12:37:12.000000000 -0700
+++++ b/tests/CMakeLists.txt	2016-09-23 19:51:37.000000000 -0700
++@@ -12,7 +12,7 @@
++ 
++ add_test(test_ndarray ndarray)
++ add_test(test_views views)
++-add_test(test_ndarray-fft ndarray-fft)
+++# add_test(test_ndarray-fft ndarray-fft)
++ add_test(test_ndarray_eigen ndarray-eigen)
++ 
++ if(NDARRAY_SWIG)
++diff -ru a/tests/SConscript b/tests/SConscript
++--- a/tests/SConscript	2016-09-26 12:37:16.000000000 -0700
+++++ b/tests/SConscript	2016-09-23 19:49:02.000000000 -0700
++@@ -45,7 +45,7 @@
++         BinaryUnitTest(testEnv, "ndarray-eigen.cc")
++     if testEnv.haveFFTW:
++         fftwEnv = testEnv.Clone()
++-        BinaryUnitTest(fftwEnv, "ndarray-fft.cc")
+++        # BinaryUnitTest(fftwEnv, "ndarray-fft.cc")
++ 
++ if pyEnv.havePython:
++     mod = pyEnv.LoadableModule("python_test_mod", "python_test_mod.cc", SHLIBPREFIX="")
