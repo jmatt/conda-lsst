@@ -168,6 +168,9 @@ pin_versions:
   scipy:
     build: "0.16.*"
     run:   ">=0.16"
+  sqlalchemy:
+    build: "1.0.*"
+    run: "1.0.*"
 
 #
 # which packages to build on which OS. The effect of this will be to add
