@@ -91,6 +91,9 @@ dependencies:
   sims_catalogs_generation:
     run:   [ sqlalchemy ]
     build: [ sqlalchemy ]
+  sims_catutils:
+    run:   [ pandas, sqlalchemy ]
+    build: [ pandas, sqlalchemy ]
   sims_skybrightness:
     run:   [ sqlalchemy ]
     build: [ sqlalchemy ]
