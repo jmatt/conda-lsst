@@ -1,17 +1,17 @@
 package:
   name: git-lfs
-  version: 1.1.2
+  version: 1.5.5
 
 build:
   number: 0
 
 source:
-  fn: git-lfs-linux-amd64-1.1.2.tar.gz # [linux64]
-  url: https://github.com/github/git-lfs/releases/download/v1.1.2/git-lfs-linux-amd64-1.1.2.tar.gz # [linux64]
-  sha256: 30cda2c559eb6a870bb0768be22ad21bc015b3519f66811a42b2652c126cce7f # [linux64]
-  fn: git-lfs-darwin-amd64-1.1.2.tar.gz # [osx]
-  url: https://github.com/github/git-lfs/releases/download/v1.1.2/git-lfs-darwin-amd64-1.1.2.tar.gz # [osx]
-  sha256: 13ebc4523a4793522ca5217ad6080965321bd0cc213cfdd222ac1f740abd5fea # [osx]
+  fn: git-lfs-linux-amd64-1.5.5.tar.gz # [linux64]
+  url: https://github.com/git-lfs/git-lfs/releases/download/v1.5.5/git-lfs-linux-amd64-1.5.5.tar.gz # [linux64]
+  sha256: 910b2b5c158b238256087cae9b84cbc0bfb83c061d5b41161b79ca08cf61b2e8 # [linux64]
+  fn: git-lfs-darwin-amd64-1.5.5.tar.gz # [osx]
+  url: https://github.com/git-lfs/git-lfs/releases/download/v1.5.5/git-lfs-darwin-amd64-1.5.5.tar.gz # [osx]
+  sha256: 2227668c76a07931dd387602f67c99d5d42f0a99c73b76f8949bbfe3a4cc49c7 # [osx]
 
 requirements:
   run:
