@@ -155,9 +155,10 @@ class Config(object):
 	def get_giturl(self, productName):
 		# Find first remote in whose list of product globs there's
 		# at least one that our productName matches
-		for remote, productNameGlobs in self.git_upstreams.items():
-			if next((glob for glob in productNameGlobs if fnmatch.fnmatch(productName, glob)), None):
-				return remote % { 'product': productName }
+		for git_dict in self.git_upstreams:
+			for remote, productNameGlobs in git_dict.items():
+				if next((glob for glob in productNameGlobs if fnmatch.fnmatch(productName, glob)), None):
+					return remote % { 'product': productName }
 
 	def get_missing_deps(self, productName, typ):
 		# Find all keys in self.missing_deps that match productName
