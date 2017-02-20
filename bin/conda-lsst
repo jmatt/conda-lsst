@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 from __future__ import print_function
+from builtins import input
 import os, os.path, subprocess, sys
 
 root_dir = os.path.realpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
@@ -79,7 +80,7 @@ def main_upload_ssh(config, args):
     print("    %s" % conda)
     if not args.yes:
         print("ok to proceed [y/n]? ", end=' ')
-        yn = raw_input().lower()
+        yn = input().lower()
         if yn not in ['y', 'yes']:
             print("upload cancelled.")
             exit(-1)

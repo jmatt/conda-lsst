@@ -1,4 +1,6 @@
 from __future__ import print_function
+from future import standard_library
+standard_library.install_aliases()
 import os.path
 import re
 import contextlib
@@ -28,9 +30,9 @@ def load_manifest(fn):
     # is fn a reference to a tag in versiondb (something like 'build:b1497')?
     if fn.startswith(prefix_build):
         url = 'https://raw.githubusercontent.com/lsst/versiondb/master/manifests/%s.txt' % fn[len(prefix_build):]
-        import urllib2
+        import urllib.request, urllib.error, urllib.parse
         print(url)
-        with contextlib.closing(urllib2.urlopen(url)) as fp:
+        with contextlib.closing(urllib.request.urlopen(url)) as fp:
             lines = fp.read().split('\n')
     else:
         # a regular file

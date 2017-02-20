@@ -1,3 +1,8 @@
+from future import standard_library
+standard_library.install_aliases()
+from builtins import next
+from builtins import str
+from builtins import object
 import os.path
 import platform
 import re
@@ -17,7 +22,7 @@ def merge(config, default):
     # based on: http://stackoverflow.com/questions/823196/yaml-merge-in-python
     #
     if isinstance(config, dict) and isinstance(default, dict):
-        for k, v in default.iteritems():
+        for k, v in default.items():
             if k not in config:
                 config[k] = v
             else:
@@ -156,7 +161,7 @@ class Config(object):
         # Find first remote in whose list of product globs there's
         # at least one that our productName matches
         for git_dict in self.git_upstreams:
-            for remote, productNameGlobs in git_dict.items():
+            for remote, productNameGlobs in list(git_dict.items()):
                 if next((glob for glob in productNameGlobs if fnmatch.fnmatch(productName, glob)), None):
                     return remote % { 'product': productName }
 
@@ -164,7 +169,7 @@ class Config(object):
         # Find all keys in self.missing_deps that match productName
         # Then return the union of all dependencies of the matching type
         # (note: returns a generator)
-        matching = [ deps.get(typ, []) for glob, deps in self.missing_deps.items() if fnmatch.fnmatch(productName, glob) ]
+        matching = [ deps.get(typ, []) for glob, deps in list(self.missing_deps.items()) if fnmatch.fnmatch(productName, glob) ]
 
         from itertools import chain
         return chain.from_iterable(matching)
@@ -183,7 +188,7 @@ class Config(object):
                 pass
 
         # Expand eups->conda map
-        for eups_name, conda_name in config['eups_to_conda_map'].items():
+        for eups_name, conda_name in list(config['eups_to_conda_map'].items()):
             config['eups_to_conda_map'][eups_name] = conda_name % config
 
         # Naming-related
@@ -197,14 +202,14 @@ class Config(object):
         # For convenience, the 'build' and 'run' parts may be implicit in config.yaml file;
         # make them explicit here, so the downstream code is uniform.
         self.internal_products = config['internal_products']
-        for name, meta in self.internal_products.items():
+        for name, meta in list(self.internal_products.items()):
             if meta is None:
                 self.internal_products[name] = { 'run': name, 'build': name }
 
         # A mapping from LSST eups packages that will be replaced by conda equivalents
         # Apply pinned versions (if any) to entries that don't have a version specified
         pv = config['pin_versions']
-        for name, meta in self.internal_products.items():
+        for name, meta in list(self.internal_products.items()):
             if name not in pv:
                 continue
 
@@ -220,7 +225,7 @@ class Config(object):
         # Parse system-provided dependencies specifications
         _deps = {}
         pv = config['pin_versions']
-        for productName, deps in config['dependencies'].items():
+        for productName, deps in list(config['dependencies'].items()):
             #
             # By default, the key is an EUPS name, but allow it to be a
             # conda name as well
@@ -309,7 +314,7 @@ class Config(object):
 
 def _get_our_channels(regex):
     """ Return channels from .condarc that match regex """
-    from urlparse import urljoin
+    from urllib.parse import urljoin
     import conda.config
 
     chans = [ urljoin(str(conda.config.context.channel_alias), u).rstrip('/ ') + '/' for u in conda.config.get_rc_urls() ]

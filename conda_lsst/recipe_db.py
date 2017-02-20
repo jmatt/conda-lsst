@@ -1,4 +1,5 @@
 from __future__ import print_function
+from builtins import object
 import os
 import os.path
 import sys
@@ -114,7 +115,7 @@ class RecipeDB(object):
             pkg2fn[p.channel.urlbase] = pkgs = dict()
             base = os.path.join(p.channel.urlbase[len('file://'):], self.platform)
             repodata = self.get_repodata(c.urlbase)
-            for fn, pkginfo in repodata[u'packages'].iteritems():
+            for fn, pkginfo in repodata[u'packages'].items():
                 name, version, build_number = pkginfo['name'], pkginfo['version'], pkginfo['build_number']
                 assert (name, version, build_number) not in pkgs
                 pkgs[(name, version, build_number)] = os.path.join(base, fn)
@@ -228,7 +229,7 @@ class RecipeDB(object):
 
         # convert to something more useful...
         repodata = {}
-        for package, pkginfo in repodata_[u'packages'].iteritems():
+        for package, pkginfo in repodata_[u'packages'].items():
             name, version = [ pkginfo[s].encode('utf-8') for s in ['name', 'version'] ]
             build_number = pkginfo['build_number']
             repodata[(name, version, build_number)] = package
@@ -245,7 +246,7 @@ class RecipeDB(object):
 
         # Fetch each package, extract and hash its recipe
         import tarfile
-        for (name, version, build_number), package in repodata.iteritems():
+        for (name, version, build_number), package in repodata.items():
             # Skip if we already know about this package
             if channel.packages.filter(Package.name == name, Package.version == version, Package.build_number == build_number).count():
                 # print "already know about %s, skipping." % package

@@ -1,5 +1,8 @@
 from __future__ import print_function
 from __future__ import absolute_import
+from builtins import next
+from builtins import str
+from builtins import object
 import os, os.path, shutil, subprocess, re, sys, glob, tempfile, contextlib, fnmatch
 from collections import OrderedDict, namedtuple
 from .version_maker import eups_to_conda_version
@@ -258,7 +261,7 @@ class RecipeMaker(object):
             try:
                 ret = subprocess.check_output('conda search --use-local --spec --json %s=%s' % (name, version), shell=True).strip()
                 j = json.loads(ret)
-                for pkginfo in j.get(unicode(name), []):
+                for pkginfo in j.get(str(name), []):
                     if pkginfo[u'build_number'] == buildnum:
                         is_built = True
                         break
@@ -288,7 +291,7 @@ class RecipeMaker(object):
         # returns Conda package names
 
         deps_ = { 'build': [], 'run': [] }
-        for typ, deps in deps_.items():
+        for typ, deps in list(deps_.items()):
             for (kind, dep, verSpec, selector, pkgSpec) in self.config.get_missing_deps(conda_name, typ):
                 # print '----', conda_name, ':', typ, kind, dep, verSpec, selector, pkgSpec
                 {
@@ -303,7 +306,7 @@ class RecipeMaker(object):
         shutil.rmtree(self.config.output_dir, ignore_errors=True)
         os.makedirs(self.config.output_dir)
         print("generating recipes: ")
-        for (product, sha, version, deps) in manifest.itervalues():
+        for (product, sha, version, deps) in manifest.values():
             if product in self.config.skip_products: continue
 
             # override gitrevs (these are temporary hacks/fixes; they should go away when those branches are merged)
@@ -319,7 +322,7 @@ class RecipeMaker(object):
         #
         rebuilds = []
         print("generating rebuild script:")
-        for pi in self.products.itervalues():
+        for pi in self.products.values():
             conda_version = "%s-%s" % (pi.version, pi.build_string)
 
             rebuilds.append("rebuild %s %s %s %s" % (pi.conda_name, conda_version, pi.product, pi.eups_version))
