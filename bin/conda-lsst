@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from __future__ import print_function
 import os, os.path, subprocess, sys
 
 root_dir = os.path.realpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
@@ -8,10 +9,10 @@ root_dir = os.path.realpath(os.path.join(os.path.dirname(os.path.abspath(__file_
 # Convenience: recover if our package is not on PYTHONPATH
 #
 try:
-	import conda_lsst
+    import conda_lsst
 except ImportError:
-	conda_lsst_path = os.path.realpath(os.path.join(root_dir))
-	sys.path.append(conda_lsst_path)
+    conda_lsst_path = os.path.realpath(os.path.join(root_dir))
+    sys.path.append(conda_lsst_path)
 
 from conda_lsst.utils import build_manifest_for_products
 from conda_lsst.recipe_maker import RecipeMaker
@@ -19,131 +20,131 @@ from conda_lsst.recipe_db import RecipeDB
 from conda_lsst.config import Config
 
 def main_make_recipes(config, args):
-	# Get the (ordered) list of EUPS products to make recipes for
-	manifest, tags = build_manifest_for_products(args.products, args.manifest)
+    # Get the (ordered) list of EUPS products to make recipes for
+    manifest, tags = build_manifest_for_products(args.products, args.manifest)
 
-	generator = RecipeMaker(config, args.root_dir, db)
-	generator.generate(manifest)
+    generator = RecipeMaker(config, args.root_dir, db)
+    generator.generate(manifest)
 
-	if args.build:
-		print "calling %s/rebuild.sh to build:" % (config.output_dir)
-		subprocess.check_call('bash %s/rebuild.sh' % (config.output_dir), shell=True)
-	else:
-		print ""
-		print "Recipes prepared in %s directory." % (config.output_dir)
-		print "Run 'bash %s/rebuild.sh' to build them." % (config.output_dir)
+    if args.build:
+        print("calling %s/rebuild.sh to build:" % (config.output_dir))
+        subprocess.check_call('bash %s/rebuild.sh' % (config.output_dir), shell=True)
+    else:
+        print("")
+        print("Recipes prepared in %s directory." % (config.output_dir))
+        print("Run 'bash %s/rebuild.sh' to build them." % (config.output_dir))
 
 def main_upload_ssh(config, args):
-	#
-	# Upload using SSH
-	#
-	files = db.files_to_upload()
-	if not files:
-		print "nothing to upload, all local packages already exist on remote servers."
-		return
+    #
+    # Upload using SSH
+    #
+    files = db.files_to_upload()
+    if not files:
+        print("nothing to upload, all local packages already exist on remote servers.")
+        return
 
-	server  = args.server 	# upstream server (SSH notation, may include username)
-	channel = args.channel	# the channel to upload to on the remote server
-	conda   = args.conda	# the path to the conda binary on the upstream server
+    server  = args.server   # upstream server (SSH notation, may include username)
+    channel = args.channel  # the channel to upload to on the remote server
+    conda   = args.conda    # the path to the conda binary on the upstream server
 
-	if channel is None: # if the channel wasn't explicitly given, use the first remote channel
-		try:
-			channel = config.channel_names[0]
-		except IndexError:
-			print >>sys.stderr, "error: there are no channels in your ~/.condarc that match the regular expression:"
-			print >>sys.stderr, ""
-			print >>sys.stderr, "    " + config.our_channel_regex
-			print >>sys.stderr, ""
-			print >>sys.stderr, "conda will upload to the first channel in ~/.condarc matching the above regex."
-			print >>sys.stderr, "Please add at least one using:"
-			print >>sys.stderr, ""
-			print >>sys.stderr, "    conda config --add channels <channel_url>"
-			print >>sys.stderr, ""
-			print >>sys.stderr, "and try again."
-			exit(-1)
-	elif channel not in config.channel_names: # if the channel was explicitly given, check that condarc knows about it
-		print >>sys.stderr, "error: you've requested to upload to channel '%s', but that channel doesn't" % channel
-		print >>sys.stderr, "appear to be listed in your ~/.condarc file."
-		print >>sys.stderr, "aborting out of abundance of caution."
-		exit(-1)
+    if channel is None: # if the channel wasn't explicitly given, use the first remote channel
+        try:
+            channel = config.channel_names[0]
+        except IndexError:
+            print("error: there are no channels in your ~/.condarc that match the regular expression:", file=sys.stderr)
+            print("", file=sys.stderr)
+            print("    " + config.our_channel_regex, file=sys.stderr)
+            print("", file=sys.stderr)
+            print("conda will upload to the first channel in ~/.condarc matching the above regex.", file=sys.stderr)
+            print("Please add at least one using:", file=sys.stderr)
+            print("", file=sys.stderr)
+            print("    conda config --add channels <channel_url>", file=sys.stderr)
+            print("", file=sys.stderr)
+            print("and try again.", file=sys.stderr)
+            exit(-1)
+    elif channel not in config.channel_names: # if the channel was explicitly given, check that condarc knows about it
+        print("error: you've requested to upload to channel '%s', but that channel doesn't" % channel, file=sys.stderr)
+        print("appear to be listed in your ~/.condarc file.", file=sys.stderr)
+        print("aborting out of abundance of caution.", file=sys.stderr)
+        exit(-1)
 
-	# construct the full remote path
-	dir = '/'.join([config.channel_dir_base, channel, config.platform])
+    # construct the full remote path
+    dir = '/'.join([config.channel_dir_base, channel, config.platform])
 
-	# summarize what we're about to do
-	print "will upload to:"
-	print "    server:     %s" % server
-	print "    directory:  %s" % dir
-	print "using path to conda:"
-	print "    %s" % conda
-	if not args.yes:
-		print "ok to proceed [y/n]? ",
-		yn = raw_input().lower()
-		if yn not in ['y', 'yes']:
-			print "upload cancelled."
-			exit(-1)
+    # summarize what we're about to do
+    print("will upload to:")
+    print("    server:     %s" % server)
+    print("    directory:  %s" % dir)
+    print("using path to conda:")
+    print("    %s" % conda)
+    if not args.yes:
+        print("ok to proceed [y/n]? ", end=' ')
+        yn = raw_input().lower()
+        if yn not in ['y', 'yes']:
+            print("upload cancelled.")
+            exit(-1)
 
-	dest = '%s:%s' % (server, dir)
-	try:
-		subprocess.check_call(['ssh', server, 'mkdir', '-p', dir])			# make sure the directory exists
-		if args.rsync:
-			subprocess.check_call(['rsync', '-av', '--progress'] + files + [dest])	# upload files
-		else:
-			subprocess.check_call(['scp', '-p'] + files + [dest])			# upload files
-		subprocess.check_call(['ssh', '-qt', server, conda, 'index', dir])		# reindex the server
-		db.reindex(config.channels)							# refresh local cache
+    dest = '%s:%s' % (server, dir)
+    try:
+        subprocess.check_call(['ssh', server, 'mkdir', '-p', dir])                      # make sure the directory exists
+        if args.rsync:
+            subprocess.check_call(['rsync', '-av', '--progress'] + files + [dest])  # upload files
+        else:
+            subprocess.check_call(['scp', '-p'] + files + [dest])                   # upload files
+        subprocess.check_call(['ssh', '-qt', server, conda, 'index', dir])              # reindex the server
+        db.reindex(config.channels)                                                     # refresh local cache
 
-		print "upload completed."
-	except subprocess.CalledProcessError:
-		print "remote server reported an error (see above)."
+        print("upload completed.")
+    except subprocess.CalledProcessError:
+        print("remote server reported an error (see above).")
 
 def main_tools_hash(config, args):
-	db.hash_recipe(args.recipe_dir, verbose=True)
+    db.hash_recipe(args.recipe_dir, verbose=True)
 
 if __name__ == "__main__":
-	# Load config file
-	config = Config(root_dir, [os.path.expanduser('~/.condalsstrc'), 'etc/config.yaml'])
+    # Load config file
+    config = Config(root_dir, [os.path.expanduser('~/.condalsstrc'), 'etc/config.yaml'])
 
-	import argparse
-	tl_parser = parser = argparse.ArgumentParser()
-	parser.add_argument("--no-cache-refresh", help="skip refreshing the list of built packages; use the cached copy. Use with care.", action="store_true")
+    import argparse
+    tl_parser = parser = argparse.ArgumentParser()
+    parser.add_argument("--no-cache-refresh", help="skip refreshing the list of built packages; use the cached copy. Use with care.", action="store_true")
 
-	subparsers = tl_parser.add_subparsers()
+    subparsers = tl_parser.add_subparsers()
 
-	# gen subcommand	
-	parser = subparsers.add_parser('make-recipes')
-	parser.add_argument("manifest", help="lsst_build-generated manifest file from which to read the package list and their versions. "
-		+ "If given as 'build:<buildtag>' (e.g., build:b1488), the manifest with that build ID will be looked up in versiondb.git. "
-		+ "Note: the file format is the same as that found in https://github.com/lsst/versiondb/tree/master/manifests."
-		, type=str)
-	parser.add_argument("products", help="the top-level products; Conda recipes will be generated for these and all their dependencies.", type=str, nargs='+')
-	parser.add_argument("--build", help="build the recipes after generation.", action="store_true")
-	parser.set_defaults(func=main_make_recipes)
+    # gen subcommand
+    parser = subparsers.add_parser('make-recipes')
+    parser.add_argument("manifest", help="lsst_build-generated manifest file from which to read the package list and their versions. "
+            + "If given as 'build:<buildtag>' (e.g., build:b1488), the manifest with that build ID will be looked up in versiondb.git. "
+            + "Note: the file format is the same as that found in https://github.com/lsst/versiondb/tree/master/manifests."
+            , type=str)
+    parser.add_argument("products", help="the top-level products; Conda recipes will be generated for these and all their dependencies.", type=str, nargs='+')
+    parser.add_argument("--build", help="build the recipes after generation.", action="store_true")
+    parser.set_defaults(func=main_make_recipes)
 
-	# upload subcommand
-	parser = subparsers.add_parser('upload')
-	parser.add_argument("channel", nargs='?', help="the channel to upload to.", type=str, default=None)
-	parser.add_argument("server", nargs='?', help="server connection string (e.g., username@my.server.edu).", type=str, default=config.channel_server)
-	parser.add_argument("--yes",   help="don't ask for confirmation before starting the upload.", action="store_true")
-	parser.add_argument("--conda", help="path to 'conda' binary on the server.", type=str, default=config.channel_server_conda)
-	parser.add_argument("--rsync", help="use rsync to copy the files to the remote server (the default is to use scp).", action="store_true")
-	parser.set_defaults(func=main_upload_ssh)
+    # upload subcommand
+    parser = subparsers.add_parser('upload')
+    parser.add_argument("channel", nargs='?', help="the channel to upload to.", type=str, default=None)
+    parser.add_argument("server", nargs='?', help="server connection string (e.g., username@my.server.edu).", type=str, default=config.channel_server)
+    parser.add_argument("--yes",   help="don't ask for confirmation before starting the upload.", action="store_true")
+    parser.add_argument("--conda", help="path to 'conda' binary on the server.", type=str, default=config.channel_server_conda)
+    parser.add_argument("--rsync", help="use rsync to copy the files to the remote server (the default is to use scp).", action="store_true")
+    parser.set_defaults(func=main_upload_ssh)
 
-	# 'tools' subcommand
-	t_parser = subparsers.add_parser('tools')
-	t_subparsers = t_parser.add_subparsers()
+    # 'tools' subcommand
+    t_parser = subparsers.add_parser('tools')
+    t_subparsers = t_parser.add_subparsers()
 
-	# 'tools hash' subcommand
-	parser = t_subparsers.add_parser('hash')
-	parser.add_argument("recipe_dir", help="the recipe dir to hash.", type=str)
-	parser.set_defaults(func=main_tools_hash)
+    # 'tools hash' subcommand
+    parser = t_subparsers.add_parser('hash')
+    parser.add_argument("recipe_dir", help="the recipe dir to hash.", type=str)
+    parser.set_defaults(func=main_tools_hash)
 
-	args = tl_parser.parse_args()
-	args.root_dir = root_dir
+    args = tl_parser.parse_args()
+    args.root_dir = root_dir
 
-	# Load the built products cache database
-	db = RecipeDB(config.recipe_db_dir, config.platform)
-	if not args.no_cache_refresh:
-		db.reindex(config.channels)
+    # Load the built products cache database
+    db = RecipeDB(config.recipe_db_dir, config.platform)
+    if not args.no_cache_refresh:
+        db.reindex(config.channels)
 
-	args.func(config, args)
+    args.func(config, args)
