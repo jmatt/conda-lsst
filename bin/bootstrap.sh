@@ -43,7 +43,7 @@ if [[ ! -f "$PWD/miniconda/.installed" ]]; then
 	# See: https://github.com/ContinuumIO/anaconda-issues/issues/478
 	conda install -c conda-forge future --yes
 	# This switches conda and conda-env. Switch back.
-	conda install conda --yes
+	conda install conda==4.1.12 --yes # version 4.2 option => 4.2.16
 
 	#
 	# Conda build and install SWIG 3.0.10
