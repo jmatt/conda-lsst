@@ -18,7 +18,7 @@ cd "$(dirname $BASH_SOURCE)"
 PLATFORM=$(uname)
 
 log-output()
-{
+{{
 	# Starting with v4.1.0, conda began sending output to the
 	# terminal (tty) instead of stdout. We use the 'script' command
 	# to capture it.
@@ -43,10 +43,10 @@ log-output()
 		[[ -f "$SUCCFILE" ]] && rm -f "$SUCCFILE" || /bin/false
 
 	fi
-}
+}}
 
 rebuild()
-{
+{{
 	# Conda name/version
 	PACKAGE="$1"
 	VERSION="$2"
@@ -80,8 +80,8 @@ rebuild()
 	fi
 	
 	popd > /dev/null
-}
+}}
 
 # this is where rebuild calls will get inserted
-%(rebuilds)s
+{rebuilds}
 echo "done."

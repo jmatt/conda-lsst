@@ -23,8 +23,8 @@ fi
 
 if [[ ! -f "$PWD/miniconda/.installed" ]]; then
 	case "$OSTYPE" in
-		linux*)  MINICONDA_SH=Miniconda-latest-Linux-x86_64.sh ;;
-		darwin*) MINICONDA_SH=Miniconda-latest-MacOSX-x86_64.sh ;;
+		linux*)  MINICONDA_SH=Miniconda3-latest-Linux-x86_64.sh ;;
+		darwin*) MINICONDA_SH=Miniconda3-latest-MacOSX-x86_64.sh ;;
 		*)       echo "Unsupported OS $OSTYPE. Exiting."; exit -1 ;;
 	esac
 
@@ -38,7 +38,7 @@ if [[ ! -f "$PWD/miniconda/.installed" ]]; then
 	# Install prerequisites
 	#
 	export PATH="$PWD/miniconda/bin:$PATH"
-	conda install conda-build==1.20.0 jinja2 requests sqlalchemy pip --yes
+	conda install conda-build==1.20.0 python==3.5.2 jinja2 requests sqlalchemy pip --yes
 	# Install python future specifically from conda-forge.
 	# See: https://github.com/ContinuumIO/anaconda-issues/issues/478
 	conda install -c conda-forge future --yes

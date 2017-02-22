@@ -13,7 +13,7 @@ def fill_out_template(dest_file, template_file, **variables):
     with open(template_file) as fp:
         template = fp.read()
 
-    text = template % variables
+    text = str.format(template, **variables)
 
     # strip template comments
     text = re.sub(r'^#--.*\n', r'', text, flags=re.MULTILINE)
@@ -33,11 +33,11 @@ def load_manifest(fn):
         import urllib.request, urllib.error, urllib.parse
         print(url)
         with contextlib.closing(urllib.request.urlopen(url)) as fp:
-            lines = fp.read().split('\n')
+            lines = fp.read().decode('utf-8').split('\n')
     else:
         # a regular file
         with open(fn) as fp:
-            lines = fp.read().split('\n')
+            lines = fp.read().decode('utf-8').split('\n')
 
     def parse_manifest_lines(lines):
         for line in lines:

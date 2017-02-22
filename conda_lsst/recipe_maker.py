@@ -169,6 +169,8 @@ class RecipeMaker(object):
             reqstr_r = create_yaml_list(rdeps)
             reqstr_b = create_yaml_list(bdeps)
 
+            buildnum, build_string, is_built = self.get_build_info(conda_name.lower(), version, dir_, build_string_prefix)
+            
             meta_yaml = os.path.join(dir_, 'meta.yaml')
             fill_out_template(meta_yaml, os.path.join(template_dir, 'meta.yaml.template'),
                               productNameLowercase = conda_name.lower(),
@@ -177,18 +179,20 @@ class RecipeMaker(object):
                               giturl = giturl,
                               build_req = reqstr_b,
                               run_req = reqstr_r,
-                              patches = patches,)
+                              patches = patches,
+                              buildnum=buildnum,
+                              build_string=build_string)
 
             # The recipe is now (almost) complete.
             # Find our build number. If this package already exists in the release DB,
             # re-use the build number and mark it as '.done' so it doesn't get rebuilt.
             # Otherwise, increment the max build number by one and use that.
-            buildnum, build_string, is_built = self.get_build_info(conda_name.lower(), version, dir_, build_string_prefix)
+            #buildnum, build_string, is_built = self.get_build_info(conda_name.lower(), version, dir_, build_string_prefix)
 
             # Fill in the build number and string
-            fill_out_template(meta_yaml, meta_yaml,
-                              buildnum = buildnum,
-                              build_string = build_string)
+#            fill_out_template(meta_yaml, meta_yaml,
+#                              buildnum=buildnum,
+#                              build_string=build_string)
 
         # record we've seen this product
         self.products[conda_name] = ProductInfo(
@@ -206,8 +210,7 @@ class RecipeMaker(object):
             buildnum = self.db.get_next_buildnum(conda_name, version)
 
         build_string = '%s_%s' % (build_string_prefix, buildnum) if build_string_prefix else str(buildnum)
-
-        return buildnum, build_string, is_built
+        return (buildnum, build_string, is_built)
 
     ##################################
     # Use static recipes to satisfy dependencies
@@ -254,13 +257,13 @@ class RecipeMaker(object):
             #
             version = meta['package']['version']
             buildnum = 0
-            build_string = "py27_0"
+            build_string = "py35_0"
             if 'build' in meta:
                 buildnum     = meta['build'].get('number', buildnum)
                 build_string = meta['build'].get('number', build_string)
             try:
                 ret = subprocess.check_output('conda search --use-local --spec --json %s=%s' % (name, version), shell=True).strip()
-                j = json.loads(ret)
+                j = json.loads(ret.decode('utf-8'))
                 for pkginfo in j.get(str(name), []):
                     if pkginfo[u'build_number'] == buildnum:
                         is_built = True

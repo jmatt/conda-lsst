@@ -15,7 +15,7 @@ cd $SRC_DIR
 # The "build" script just copies the ups/ directory and declares the product
 PRODUCT=$(basename ups/*.table .table)
 EUPS_VERSION="system"
-#EUPS_VERSION="system_%(eups_version)s"
+#EUPS_VERSION="system_{eups_version}"
 PREFIX="$PREFIX/opt/lsst/$PRODUCT"
 
 # initialize EUPS
@@ -35,7 +35,7 @@ done
 # dir; it will be merged by the pre-link.sh script with the EUPS database
 # when the package is installed
 TAGFILE="$EUPS_PATH/ups_db/global.tags"
-for TAG in %(eups_tags)s; do
+for TAG in {eups_tags}; do
 	# FIXME: This should be handled by the post-link/pre-delete script !!!
 	test -f "$TAGFILE" && echo -n " " >> "$TAGFILE"
 	echo -n "$TAG" >> "$TAGFILE"

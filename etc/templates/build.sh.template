@@ -46,7 +46,7 @@ fi
 # Build the package using eupspkg
 #
 PRODUCT=$(basename ups/*.table .table)
-EUPS_VERSION="%(eups_version)s"
+EUPS_VERSION="{eups_version}"
 PREFIX="$PREFIX/opt/lsst/$PRODUCT"
 
 # initialize EUPS
@@ -58,7 +58,7 @@ eupspkg PREFIX="$PREFIX" PRODUCT="$PRODUCT" VERSION="$EUPS_VERSION" FLAVOR=gener
 # setup dependencies (just for the environmental variables, really)
 # FIXME: a command should be added to eupspkg to just get the envvars
 eups list
-%(setups)s
+{setups}
 setup -r .
 export
 
@@ -72,7 +72,7 @@ cat > _build.sh <<-EOT
 
 	# XCODE_73_RPATH_BUG workaround?
 	if [[ "$XCODE_73_RPATH_BUG" == 1 ]]; then
-	    trap '{ rm -f @rpath; rm -rf "$PREFIX/@rpath"; }' EXIT
+	    trap '{{ rm -f @rpath; rm -rf "$PREFIX/@rpath"; }}' EXIT
 	    ln -fs "\$CONDA_DEFAULT_ENV/lib" @rpath
 	fi
 
@@ -93,7 +93,7 @@ chmod +x _build.sh
 # dir; it will be merged by the pre-link.sh script with the EUPS database
 # when the package is installed
 TAGFILE="$EUPS_PATH/ups_db/global.tags"
-for TAG in %(eups_tags)s; do
+for TAG in {eups_tags}; do
 	# FIXME: This should be handled by the post-link/pre-delete script !!!
 	test -f "$TAGFILE" && echo -n " " >> "$TAGFILE"
 	echo -n "$TAG" >> "$TAGFILE"

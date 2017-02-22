@@ -185,8 +185,8 @@ pin_versions:
     build: "1.10.4"
     run:   ">=1.10.4,<1.12"
   python:
-    build: "2.7.*"
-    run:   "2.7.*"
+    build: "3.5.*"
+    run:   "3.5.*"
   swig:
     build: "==3.0.10"
     run:   "==3.0.10"

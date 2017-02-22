@@ -133,7 +133,7 @@ class RecipeDB(object):
                 sys.stdout.write("%s" % s)
                 return m.update(s)
         else:
-            def update(m, s): return m.update(s)
+            def update(m, s): return m.update(s.encode('utf-8'))
 
         for fn in sorted(filelist):
             # Ignore all files that *don't* end in the following suffixes
@@ -178,11 +178,15 @@ class RecipeDB(object):
                                             # FIXME: not sure what happens if we decide to change the buildstr prefix?
                         elif state == 1 and not line.strip():
                             state = 2       # didn't have an explicit number:
-
-                        mm.update(line)
+                        ss = line.decode('utf-8')
+                        mm.update(ss.encode('utf-8'))
                 else:
                     # Just add the file contents
-                    mm.update(fp.read())
+                    ss = fp.read()
+                    if type (ss) is not str:
+                        ss = ss.decode('utf-8')
+                    # otherwise it's a string and good.
+                    mm.update(ss.encode('utf-8'))
 
             # Update the list hash
             res = "%s  %s\n" % (mm.hexdigest(), rel_fn)
