@@ -64,7 +64,7 @@ def eups_to_conda_version(product, eups_version, giturl):
         branch, sha1 = match.groups()
 
         timestamp = subprocess.check_output([extract_version_path, giturl, sha1]).strip()
-        version = "%s.%s" % (branch, timestamp)
+        version = "%s.%s" % (branch, timestamp.decode('utf-8'))
 
         return version, sha1
 
