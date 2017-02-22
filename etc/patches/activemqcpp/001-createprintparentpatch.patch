@@ -1,0 +1,13 @@
+diff -Nru patches/001-PrintParens.patch ./work/patches/001-PrintParens.patch
+--- ./patches/001-PrintParens.patch	1970-01-01 00:00:00.000000000 +0000
++++ ./patches/001-PrintParens.patch	2017-02-22 06:59:05.425378987 +0000
+@@ -0,0 +1,9 @@
++--- ./ups/activemqcpp.cfg
+++++ ./ups/activemqcpp.cfg
++@@ -18,5 +18,4 @@
++ includes = subprocess.Popen([configBin, "--includes"], stdout=subprocess.PIPE).communicate()[0]
++ includes = includes.replace("-I","")
++ config.paths["XCPPPATH"] = includes.split()
++-print config.paths["XCPPPATH"]
++-
+++print(config.paths["XCPPPATH"])
