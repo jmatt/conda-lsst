@@ -42,8 +42,9 @@ if [[ ! -f "$PWD/miniconda/.installed" ]]; then
 	# Install python future specifically from conda-forge.
 	# See: https://github.com/ContinuumIO/anaconda-issues/issues/478
 	conda install -c conda-forge future --yes
+
 	# This switches conda and conda-env. Switch back.
-	conda install conda==4.2.16 --yes
+	conda install conda==4.1.12 --yes # version 4.2 option => 4.2.16
 
 	#
 	# Conda build and install SWIG 3.0.10
@@ -61,6 +62,9 @@ if [[ ! -f "$PWD/miniconda/.installed" ]]; then
 	#
 	pip install requests_file
 
+	# Install conda==4.1.12 so it'll work with conda-lsst.
+	conda install conda==4.1.12
+
 	# marker that we're done
 	touch "$PWD/miniconda/.installed"
 else
@@ -68,9 +72,6 @@ else
 	echo "Found Miniconda in $PWD/miniconda; skipping Miniconda install."
 	echo
 fi
-
-# Install conda==4.1.12 so it'll work with conda-lsst.
-conda install conda==4.1.12
 
 echo "Miniconda has been installed in $PWD/miniconda. Add it to your path:"
 echo

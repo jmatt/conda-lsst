@@ -63,6 +63,8 @@ skip_products:
   - anaconda
   - afwdata
   - testdata_subaru  # eupspkg'ing of LFS repos is broken
+  - testdata_decam
+  - testdata_cfht
 
 #
 # Prefix to add to all packages we'll buld
@@ -142,15 +144,15 @@ dependencies:
     run:   [ google-apputils ]
     build: [ google-apputils ]
   sims_maps:
-    build: [ "recipe/lsst-git-lfs-config" ]
+    build: [ "recipe/git-lfs", "recipe/lsst-git-lfs-config" ]
   afwdata:
-    build: [ "recipe/lsst-git-lfs-config" ]
+    build: [ "recipe/git-lfs", "recipe/lsst-git-lfs-config" ]
   testdata_cfht:
-    build: [ "recipe/lsst-git-lfs-config" ]
+    build: [ "recipe/git-lfs", "recipe/lsst-git-lfs-config" ]
   testdata_decam:
-    build: [ "recipe/lsst-git-lfs-config" ]
+    build: [ "recipe/git-lfs", "recipe/lsst-git-lfs-config" ]
   testdata_subaru:
-    build: [ "recipe/lsst-git-lfs-config" ]
+    build: [ "recipe/git-lfs", "recipe/lsst-git-lfs-config" ]
   sims_movingObjects:
     run:   [ pandas, numexpr ]
     build: [ pandas, numexpr ]
