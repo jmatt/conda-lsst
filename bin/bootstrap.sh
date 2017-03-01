@@ -63,7 +63,7 @@ if [[ ! -f "$PWD/miniconda/.installed" ]]; then
 	pip install requests_file
 
 	# Install conda==4.1.12 so it'll work with conda-lsst.
-	conda install conda==4.1.12
+	conda install conda==4.1.12 --yes
 
 	# marker that we're done
 	touch "$PWD/miniconda/.installed"
