@@ -147,6 +147,8 @@ dependencies:
     build: [ "recipe/lsst-git-lfs-config" ]
   testdata_cfht:
     build: [ "recipe/lsst-git-lfs-config" ]
+  testdata_decam:
+    build: [ "recipe/lsst-git-lfs-config" ]
   testdata_subaru:
     build: [ "recipe/lsst-git-lfs-config" ]
   sims_movingObjects:

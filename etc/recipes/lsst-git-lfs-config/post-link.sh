@@ -7,7 +7,7 @@ CREDENTIALS_FILE="$PREFIX/etc/git-lfs-lsst-anonymous-credentials"
 export PATH="$PREFIX/bin:$PATH"
 
 # Turn of git-lfs batch API (not supported by LSST's git-lfs servers)
-git config --system --add "lfs.batch" false
+# git config --system --add "lfs.batch" false
 
 # create the credentials cache, and point the credentials helper to the cache
 # the cache has empty u/p, enabling anonymous access
