@@ -16,7 +16,9 @@ git-upstreams:
 # Any SHA1 overrides to be applied to the build manifest
 # This is a list of mapping of 'product_name' -> 'SHA1-or-ref'
 #
-override_gitrev: {}
+override_gitrev: {
+  sims_maps: '322c284c45fe1da03d53a81051549bfe4c265c47'
+}
 
 #
 # Directory with patches
@@ -104,12 +106,18 @@ dependencies:
   sncosmo:
     run:   [ recipe/astropy-helpers, astropy, cython, scipy ]
     build: [ recipe/astropy-helpers, astropy, cython, scipy ]
+  sims_alertsim:
+    run:   ["jinja2 ==2.8"]
+    build: ["jinja2 ==2.8"]
   sims_catalogs_generation:
     run:   [ sqlalchemy ]
     build: [ sqlalchemy ]
   sims-catutils:
     run:   [ pandas, sqlalchemy ]
     build: [ pandas, sqlalchemy ]
+  sims_galsiminterface:
+    run:   ["jinja2 ==2.8"]
+    build: ["jinja2 ==2.8"]
   sims_skybrightness:
     run:   [ sqlalchemy ]
     build: [ sqlalchemy ]
@@ -120,11 +128,14 @@ dependencies:
     run:   [ astropy ]
     build: [ astropy ]
   sims_maf:
-    run:   [ "ipython-notebook >=3.0" ]
-    build: [ "ipython-notebook >=3.0" ]
+    run:   [ "ipython-notebook >=3.0", pandas, "jinja2 ==2.8" ]
+    build: [ "ipython-notebook >=3.0", pandas, "jinja2 ==2.8" ]
   sims_operations:
     run:   [ requests ]
     build: [ requests ]
+  sncosmo:
+    run:   [astropy-helpers, cython, scipy, "jinja2 ==2.8"]
+    build: [astropy-helpers, cython, scipy, "jinja2 ==2.8"]
   healpy:
     run:   [ six ]
     build: [ six ]
@@ -199,6 +210,9 @@ pin_versions:
   sqlalchemy:
     build: "1.0.*"
     run: "1.0.*"
+  jinja2:
+    build: "2.8.*"
+    run: "2.8.*"
 
 #
 # which packages to build on which OS. The effect of this will be to add
